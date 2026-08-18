@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>请求 #1 详情 — proxy-logs</title>
+<style>
+  body { font-family: -apple-system, "Microsoft YaHei", sans-serif; margin: 0 auto; padding: 20px; color: #333; max-width: 1280px; }
+  h1 { border-bottom: 2px solid #1a73e8; padding-bottom: 8px; }
+  h2 { margin-top: 28px; color: #1a73e8; }
+  h3 { margin-top: 18px; color: #365f91; }
+  a { color: #06f; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+  th, td { padding: 6px 10px; border: 1px solid #ddd; vertical-align: top; }
+  th { background: #f0f4f8; text-align: left; width: 180px; }
+  pre { white-space: pre-wrap; word-break: break-word; background: #f7f7f7; border: 1px solid #ddd; padding: 12px; overflow-x: auto; }
+  .message { border: 1px solid #ddd; margin: 12px 0; padding: 10px; background: #fbfdff; }
+  .role { font-weight: 700; color: #365f91; margin-bottom: 8px; }
+  .block { margin: 8px 0; }
+  .label { color: #666; font-size: 13px; margin-bottom: 4px; }
+  .redacted { color: #777; background: #f2f2f2; border: 1px dashed #bbb; padding: 10px; }
+  details summary { cursor: pointer; color: #06f; }
+</style>
+</head>
+<body>
+<p><a href="../report.html">返回报表</a></p>
+<h1>请求 #1 详情</h1>
+<table>
+<tbody>
+<tr><td class="left">模型</td><td>-</td></tr>
+
+<tr><td class="left">Endpoint</td><td>HEAD /api/hello</td></tr>
+
+<tr><td class="left">状态 / 流式</td><td>404 / N</td></tr>
+
+<tr><td class="left">耗时</td><td>186ms，TTFB -，首 token -</td></tr>
+
+<tr><td class="left">Token</td><td>input 0 / output 0 / cache read 0 / cache create 0</td></tr>
+
+<tr><td class="left">Body / SSE</td><td>request 0B / response 0B / SSE 0</td></tr>
+
+<tr><td class="left">响应块</td><td>-</td></tr>
+
+</tbody>
+</table>
+<h2 id="request">请求全文</h2>
+<h3>messages</h3>
+<p>无 messages</p>
+
+<h2 id="response">响应全文</h2>
+<h3>响应块</h3><pre>-</pre>
+<h3>当前响应文本</h3><pre>-</pre>
+
+<h2>原始日志 JSON</h2>
+<p>这里保留原始结构用于排查；thinking/signature 原文会折叠为长度标记。</p>
+<details><summary>request JSON</summary><pre>{
+  &quot;id&quot;: 1,
+  &quot;phase&quot;: &quot;request&quot;,
+  &quot;uuid&quot;: &quot;53151253-54ea-4de7-bce4-d67771b2f24e&quot;,
+  &quot;timestamp&quot;: &quot;2026-08-18T10:10:57.800Z&quot;,
+  &quot;request&quot;: {
+    &quot;method&quot;: &quot;HEAD&quot;,
+    &quot;url&quot;: &quot;/api/hello&quot;,
+    &quot;headers&quot;: {
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;user-agent&quot;: &quot;Bun/1.4.0&quot;,
+      &quot;accept&quot;: &quot;*/*&quot;,
+      &quot;host&quot;: &quot;localhost:8080&quot;,
+      &quot;accept-encoding&quot;: &quot;gzip, deflate, br, zstd&quot;
+    },
+    &quot;model&quot;: null,
+    &quot;stream&quot;: false,
+    &quot;messages_summary&quot;: null,
+    &quot;system_preview&quot;: null,
+    &quot;tools_available&quot;: [],
+    &quot;body&quot;: &quot;&quot;,
+    &quot;body_size&quot;: 0
+  }
+}</pre></details>
+<details><summary>response JSON</summary><pre>{
+  &quot;id&quot;: 1,
+  &quot;phase&quot;: &quot;response&quot;,
+  &quot;timestamp&quot;: &quot;2026-08-18T10:10:57.984Z&quot;,
+  &quot;duration_ms&quot;: 186,
+  &quot;model&quot;: null,
+  &quot;response&quot;: {
+    &quot;status&quot;: 404,
+    &quot;headers&quot;: {
+      &quot;date&quot;: &quot;Tue, 18 Aug 2026 10:10:57 GMT&quot;,
+      &quot;content-type&quot;: &quot;text/plain; charset=utf-8&quot;,
+      &quot;content-length&quot;: &quot;19&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;
+    },
+    &quot;is_streaming&quot;: false,
+    &quot;body&quot;: &quot;&quot;,
+    &quot;body_size&quot;: 0,
+    &quot;sse_events&quot;: [],
+    &quot;sse_event_count&quot;: 0,
+    &quot;tool_calls&quot;: []
+  },
+  &quot;usage&quot;: null,
+  &quot;timing&quot;: {
+    &quot;total_ms&quot;: 186
+  },
+  &quot;cumulative&quot;: {
+    &quot;in&quot;: 0,
+    &quot;out&quot;: 0,
+    &quot;requests&quot;: 1
+  }
+}</pre></details>
+<details><summary>error JSON</summary><pre>-</pre></details>
+</body>
+</html>
