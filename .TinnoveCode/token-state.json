@@ -42,10 +42,10 @@
     "cacheWrite": 0
   },
   "3583b6fe-d69d-48be-a556-646903b12cf2": {
-    "input": 33466,
-    "output": 12370,
+    "input": 140259,
+    "output": 1286,
     "reasoning": 0,
-    "cacheRead": 1750400,
+    "cacheRead": 5120,
     "cacheWrite": 0
   }
 }

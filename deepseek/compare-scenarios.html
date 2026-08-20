@@ -11,12 +11,10 @@
     --bg: #f1f5f9; --card-bg: #ffffff; --text: #0f172a; --text-secondary: #64748b;
     --border: #e2e8f0; --accent: #3b82f6; --accent-light: #eff6ff;
     --green: #10b981; --green-bg: #ecfdf5; --red: #ef4444; --red-bg: #fef2f2;
-    --yellow: #f59e0b; --yellow-bg: #fffbeb; --purple: #8b5cf6;
-    --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    --sidebar-w: 240px;
+    --yellow: #f59e0b; --sidebar-w: 240px;
     --radius: 14px; --radius-sm: 8px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -24,17 +22,15 @@ body {
     background: var(--bg); color: var(--text); line-height: 1.6;
 }
 .header {
-    background: var(--header-bg); color: #fff; padding: 20px 28px;
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    color: #fff; padding: 20px 28px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100;
 }
 .header h1 { font-size: 20px; font-weight: 700; }
 .header .meta { font-size: 12px; opacity: 0.7; }
 
-/* 布局 */
 .layout { display: flex; min-height: calc(100vh - 68px); }
 
-/* 左侧导航 */
 .sidebar {
     width: var(--sidebar-w); min-width: var(--sidebar-w);
     background: #fff; border-right: 1px solid var(--border);
@@ -62,7 +58,6 @@ body {
 .sidebar .nav-item .dot.s5 { background: #ef4444; }
 .sidebar .nav-item .dot.all { background: #64748b; }
 
-/* 主内容区 */
 .main { flex: 1; padding: 24px 28px; overflow-y: auto; min-width: 0; }
 .panel { display: none; }
 .panel.active { display: block; }
@@ -73,36 +68,64 @@ body {
     border-bottom: 2px solid var(--border); color: var(--text);
 }
 
-/* 汇总表 */
+/* 汇总卡片 */
+.summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.sum-card {
+    background: var(--card-bg); border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border); text-align: center;
+}
+.sum-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; font-weight: 600; }
+.sum-values { display: flex; justify-content: center; gap: 12px; margin-bottom: 6px; }
+.sum-val { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.sum-diff { font-size: 12px; font-weight: 600; }
+.tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+.tag.with { background: #dbeafe; color: #2563eb; }
+.tag.without { background: #fecaca; color: #dc2626; }
+
+/* 提示词 */
+.prompt-box { margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.prompt-header {
+    background: #f8fafc; padding: 10px 16px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 600; user-select: none;
+}
+.prompt-header:hover { background: #f1f5f9; }
+.prompt-toggle { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.prompt-text {
+    margin: 0; padding: 14px 18px; font-size: 12px; line-height: 1.7;
+    background: #fff; border: none; white-space: pre-wrap; word-break: break-word;
+    max-height: 300px; overflow-y: auto;
+}
+.prompt-box.collapsed .prompt-text { display: none; }
+.prompt-box.collapsed .prompt-toggle::after { content: '（已折叠）'; }
+.prompt-box .prompt-toggle::after { content: '（已展开）'; }
+
+/* 表格 */
 .master-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; background: var(--card-bg); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
 .master-table th, .master-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); }
-.master-table th { background: #334155; color: #fff; font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
+.master-table th { background: #334155; color: #fff; font-weight: 600; white-space: nowrap; }
 .master-table th:first-child, .master-table td:first-child { text-align: left; font-weight: 600; }
 .master-table .mode-row td { background: #f8fafc; font-weight: 500; }
 .master-table .change { font-size: 11px; font-weight: 700; }
-.master-table .change.good { color: var(--green); }
-.master-table .change.bad { color: var(--red); }
-.master-table .change.neutral { color: var(--text-secondary); }
 .master-table .sep td { border-top: 2px solid #cbd5e1; }
 
-/* 场景 Section */
-.scenario-section { background: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 32px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-.scenario-section h2 { font-size: 20px; margin-bottom: 20px; color: var(--text); display: flex; align-items: center; gap: 10px; }
-.scenario-section h2 .badge { font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-.scenario-section h2 .badge.with { background: var(--accent-light); color: var(--accent); }
-.scenario-section h2 .badge.without { background: var(--red-bg); color: var(--red); }
-
-/* 场景内对比小表 */
 .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
 .compare-table th, .compare-table td { padding: 8px 14px; text-align: center; border-bottom: 1px solid var(--border); }
 .compare-table th { background: #f1f5f9; font-weight: 600; }
-.compare-table th:first-child { text-align: left; }
-.compare-table td:first-child { text-align: left; font-weight: 500; }
+.compare-table th:first-child, .compare-table td:first-child { text-align: left; font-weight: 500; }
+.compare-table .sub { font-size: 11px; color: var(--text-secondary); display: block; }
 .compare-table .diff { font-weight: 600; }
-.compare-table .diff.good { color: var(--green); }
-.compare-table .diff.bad { color: var(--red); }
 
-/* 图表容器 */
+.tool-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tool-table th, .tool-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+.tool-table th { background: #334155; color: #fff; font-weight: 600; white-space: nowrap; }
+.tool-table th:first-child, .tool-table td:first-child { text-align: left; font-family: monospace; }
+.tool-table .with-col { background: rgba(59,130,246,0.05); }
+.tool-table .without-col { background: rgba(239,68,68,0.03); }
+
+/* 图表 */
+.scenario-section { background: var(--card-bg); border-radius: var(--radius); padding: 24px; margin-bottom: 32px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+.scenario-section h2 { font-size: 20px; margin-bottom: 20px; }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .chart-full { margin-bottom: 20px; }
 .chart-box { background: #f8fafc; border-radius: var(--radius-sm); padding: 16px; border: 1px solid var(--border); }
@@ -110,38 +133,25 @@ body {
 .chart-box .canvas-wrap { position: relative; height: 300px; }
 .chart-box .canvas-wrap.tall { height: 360px; }
 
-/* 工具调用表 */
-.tool-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.tool-table th, .tool-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); }
-.tool-table th { background: #334155; color: #fff; font-weight: 600; white-space: nowrap; }
-.tool-table th:first-child, .tool-table td:first-child { text-align: left; font-family: monospace; }
-.tool-table .mode-header { background: #475569; font-size: 11px; }
-.tool-table .with-col { background: rgba(59,130,246,0.05); }
-.tool-table .without-col { background: rgba(239,68,68,0.03); }
-
-/* 结论 */
-.conclusion { background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
-.conclusion h2 { font-size: 18px; margin-bottom: 16px; }
-.conclusion li { margin: 6px 0; font-size: 14px; }
-
 .good { color: var(--green); }
 .bad { color: var(--red); }
 .neutral { color: var(--text-secondary); }
+
+.note { font-size: 12px; color: var(--text-secondary); margin-top: 12px; padding: 10px 14px; background: #fffbeb; border-radius: 6px; border-left: 3px solid var(--yellow); }
 
 @media (max-width: 900px) {
     .sidebar { width: 180px; min-width: 180px; }
     .chart-row { grid-template-columns: 1fr; }
     .main { padding: 12px; }
-    .master-table { font-size: 11px; }
-    .master-table th, .master-table td { padding: 6px 8px; }
+    .summary-cards { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
     .layout { flex-direction: column; }
     .sidebar { width: 100%; min-width: 100%; height: auto; position: static;
                display: flex; flex-wrap: wrap; padding: 8px; gap: 4px; }
-    .sidebar .nav-group { margin: 0; padding: 0; }
     .sidebar .nav-group-title { display: none; }
     .sidebar .nav-item { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+    .summary-cards { grid-template-columns: 1fr 1fr; }
 }
 
 </style>
@@ -149,7 +159,7 @@ body {
 <body>
 <div class="header">
   <h1>Context Mode 插件 — 5 场景对比分析</h1>
-  <div class="meta">有插件 (with-context-mode) vs 无插件 (without-context-mode)</div>
+  <div class="meta">数据来源：summary.jsonl + proxy-request.jsonl | 耗时 = 墙上时间</div>
 </div>
 <div class="layout">
   <nav class="sidebar">
@@ -177,575 +187,605 @@ body {
         <span class="dot s5"></span> 场景5：项目逆向分析
       </div>
     </div>
-    <div class="nav-group">
-      <div class="nav-group-title">其他</div>
-      <div class="nav-item" data-panel="panel-tools" onclick="switchPanel('panel-tools', this)">
-        <span class="dot all"></span> 工具调用对比
-      </div>
-      <div class="nav-item" data-panel="panel-conclusion" onclick="switchPanel('panel-conclusion', this)">
-        <span class="dot all"></span> 结论摘要
-      </div>
-    </div>
   </nav>
   <div class="main">
     <div class="panel active" id="panel-master">
       <div class="section">
-<div class="section-title">核心指标对比总表</div>
+<div class="section-title">核心指标对比总表（耗时 = 墙上时间）</div>
 <div style="overflow-x:auto;">
 <table class="master-table">
 <thead>
 <tr>
-  <th>场景</th>
-  <th>模式</th>
-  <th>有效轮数</th>
-  <th>总 Token</th>
-  <th>新输入 Token</th>
-  <th>输出 Token</th>
-  <th>缓存命中率</th>
-  <th>总耗时</th>
+  <th>场景</th><th>模式</th><th>轮数</th><th>总 Token</th><th>输入 Token</th><th>输出 Token</th><th>缓存命中率</th><th>耗时</th><th>ctx工具调用</th>
 </tr>
 </thead>
 <tbody><tr class="sep">
   <td rowspan="2" style="vertical-align:middle;">场景1：日志分析</td>
   <td class="mode-row">有插件</td>
-  <td>32</td>
+  <td>34 (32有效)</td>
   <td>2.6M</td>
   <td>137K</td>
   <td>17K</td>
   <td>94.7%</td>
-  <td>5.0分钟</td>
+  <td>8.0分钟</td>
+  <td>173次</td>
 </tr>
 <tr>
   <td class="mode-row">无插件</td>
-  <td>83</td>
+  <td>94 (83有效)</td>
   <td>4.4M</td>
   <td>542K</td>
   <td>48K</td>
   <td>87.5%</td>
-  <td>13.6分钟</td>
-</tr><tr style="font-size:11px;color:#64748b;">
+  <td>19.3分钟</td>
+  <td>0次</td>
+</tr>
+<tr style="font-size:11px;color:#64748b;">
   <td colspan="2" style="text-align:right;font-weight:600;">变化</td>
-  <td class="change good">-61.4%</td>
+  <td class="change good">-63.8%</td>
   <td class="change good">-41.3%</td>
   <td class="change good">-74.8%</td>
   <td class="change good">-64.7%</td>
-  <td class="change good">+7.2pp</td>
-  <td class="change good">-63.2%</td>
+  <td class="change good">+7.1pp</td>
+  <td class="change good">-58.6%</td>
+  <td></td>
 </tr><tr class="sep">
   <td rowspan="2" style="vertical-align:middle;">场景2：代码优化</td>
   <td class="mode-row">有插件</td>
-  <td>31</td>
+  <td>33 (31有效)</td>
   <td>3.0M</td>
   <td>100K</td>
   <td>62K</td>
   <td>96.6%</td>
-  <td>13.3分钟</td>
+  <td>14.8分钟</td>
+  <td>26次</td>
 </tr>
 <tr>
   <td class="mode-row">无插件</td>
-  <td>35</td>
+  <td>37 (35有效)</td>
   <td>2.0M</td>
   <td>101K</td>
   <td>34K</td>
   <td>94.9%</td>
-  <td>8.3分钟</td>
-</tr><tr style="font-size:11px;color:#64748b;">
+  <td>15.0分钟</td>
+  <td>0次</td>
+</tr>
+<tr style="font-size:11px;color:#64748b;">
   <td colspan="2" style="text-align:right;font-weight:600;">变化</td>
-  <td class="change good">-11.4%</td>
+  <td class="change good">-10.8%</td>
   <td class="change bad">+46.6%</td>
   <td class="change neutral">-0.9%</td>
   <td class="change bad">+85.4%</td>
-  <td class="change good">+1.7pp</td>
-  <td class="change bad">+60.2%</td>
+  <td class="change good">+1.6pp</td>
+  <td class="change good">-1.6%</td>
+  <td></td>
 </tr><tr class="sep">
   <td rowspan="2" style="vertical-align:middle;">场景3：2048游戏</td>
   <td class="mode-row">有插件</td>
-  <td>15</td>
+  <td>16 (15有效)</td>
   <td>886K</td>
   <td>83K</td>
   <td>27K</td>
   <td>90.4%</td>
-  <td>6.1分钟</td>
+  <td>7.0分钟</td>
+  <td>5次</td>
 </tr>
 <tr>
   <td class="mode-row">无插件</td>
-  <td>7</td>
+  <td>8 (7有效)</td>
   <td>215K</td>
   <td>38K</td>
   <td>10K</td>
   <td>81.3%</td>
-  <td>2.3分钟</td>
-</tr><tr style="font-size:11px;color:#64748b;">
+  <td>2.6分钟</td>
+  <td>0次</td>
+</tr>
+<tr style="font-size:11px;color:#64748b;">
   <td colspan="2" style="text-align:right;font-weight:600;">变化</td>
-  <td class="change bad">+114.3%</td>
+  <td class="change bad">+100.0%</td>
   <td class="change bad">+312.0%</td>
   <td class="change bad">+115.4%</td>
   <td class="change bad">+176.0%</td>
   <td class="change good">+9.1pp</td>
-  <td class="change bad">+165.2%</td>
+  <td class="change bad">+169.0%</td>
+  <td></td>
 </tr><tr class="sep">
   <td rowspan="2" style="vertical-align:middle;">场景4：书籍分析</td>
   <td class="mode-row">有插件</td>
-  <td>31</td>
+  <td>41 (31有效)</td>
   <td>3.1M</td>
   <td>249K</td>
   <td>47K</td>
   <td>91.8%</td>
-  <td>12.2分钟</td>
+  <td>13.4分钟</td>
+  <td>315次</td>
 </tr>
 <tr>
   <td class="mode-row">无插件</td>
-  <td>23</td>
+  <td>42 (23有效)</td>
   <td>2.0M</td>
   <td>294K</td>
   <td>35K</td>
   <td>84.9%</td>
-  <td>8.9分钟</td>
-</tr><tr style="font-size:11px;color:#64748b;">
+  <td>11.0分钟</td>
+  <td>0次</td>
+</tr>
+<tr style="font-size:11px;color:#64748b;">
   <td colspan="2" style="text-align:right;font-weight:600;">变化</td>
-  <td class="change bad">+34.8%</td>
+  <td class="change good">-2.4%</td>
   <td class="change bad">+56.3%</td>
   <td class="change good">-15.2%</td>
   <td class="change bad">+36.1%</td>
   <td class="change good">+6.9pp</td>
-  <td class="change bad">+37.1%</td>
+  <td class="change bad">+22.1%</td>
+  <td></td>
 </tr><tr class="sep">
   <td rowspan="2" style="vertical-align:middle;">场景5：项目逆向分析</td>
   <td class="mode-row">有插件</td>
-  <td>68</td>
+  <td>78 (68有效)</td>
   <td>4.1M</td>
   <td>450K</td>
   <td>86K</td>
   <td>88.9%</td>
-  <td>22.0分钟</td>
+  <td>11.7分钟</td>
+  <td>52次</td>
 </tr>
 <tr>
   <td class="mode-row">无插件</td>
-  <td>35</td>
+  <td>43 (35有效)</td>
   <td>2.3M</td>
   <td>277K</td>
   <td>30K</td>
   <td>87.9%</td>
-  <td>8.0分钟</td>
-</tr><tr style="font-size:11px;color:#64748b;">
+  <td>8.6分钟</td>
+  <td>0次</td>
+</tr>
+<tr style="font-size:11px;color:#64748b;">
   <td colspan="2" style="text-align:right;font-weight:600;">变化</td>
-  <td class="change bad">+94.3%</td>
+  <td class="change bad">+81.4%</td>
   <td class="change bad">+78.7%</td>
   <td class="change bad">+62.5%</td>
   <td class="change bad">+186.8%</td>
   <td class="change good">+1.0pp</td>
-  <td class="change bad">+175.0%</td>
-</tr></tbody></table></div></div>
+  <td class="change bad">+37.1%</td>
+  <td></td>
+</tr></tbody>
+</table></div></div>
+      <div class="section">
+<h2>结论摘要</h2>
+<ul style="font-size:14px;"><li><strong>场景1：日志分析：</strong>有插件 Token -41.3%，耗时 -58.6%，缓存命中率 +7.1pp，ctx工具调用 173 次。插件充分发挥，ctx批量操作替代了单独Bash/Read调用</li><li><strong>场景2：代码优化：</strong>有插件 Token +46.6%，耗时 -1.6%，缓存命中率 +1.6pp，ctx工具调用 26 次。插件几乎未使用（ctx调用<26次），模型未充分利用插件能力</li><li><strong>场景3：2048游戏：</strong>有插件 Token +312.0%，耗时 +169.0%，缓存命中率 +9.1pp，ctx工具调用 5 次。插件几乎未使用（ctx调用<5次），模型未充分利用插件能力</li><li><strong>场景4：书籍分析：</strong>有插件 Token +56.3%，耗时 +22.1%，缓存命中率 +6.9pp，ctx工具调用 315 次。插件有调用但效果不显著</li><li><strong>场景5：项目逆向分析：</strong>有插件 Token +78.7%，耗时 +37.1%，缓存命中率 +1.0pp，ctx工具调用 52 次。插件被调用但模型跑了更多轮（78 vs 43），行为漂移</li></ul>
+<p class="note" style="margin-top:16px;">⚠ 耗时采用墙上时间（首条请求到末条请求的时间戳差值），避免 duration_ms 并发重叠导致的虚高问题。S5 有插件因 Agent 并发请求，duration_ms 累加 22.0 分钟但墙上仅 11.7 分钟。</p>
+</div>
     </div>
     <div class="panel" id="panel-s1"><div class="scenario-section">
 <h2>场景1：日志分析</h2>
 
-<!-- 指标对比小表 -->
-<table class="compare-table">
-<thead>
-<tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr>
-</thead>
-<tbody>
-<tr>
-  <td>有效轮数</td>
-  <td>32</td>
-  <td>83</td>
-  <td class="diff good">-61.4%</td>
-</tr>
-<tr>
-  <td>总 Token</td>
-  <td>2.6M</td>
-  <td>4.4M</td>
-  <td class="diff good">-41.3%</td>
-</tr>
-<tr>
-  <td>新输入 Token</td>
-  <td>137K</td>
-  <td>542K</td>
-  <td class="diff good">-74.8%</td>
-</tr>
-<tr>
-  <td>输出 Token</td>
-  <td>17K</td>
-  <td>48K</td>
-  <td class="diff good">-64.7%</td>
-</tr>
-<tr>
-  <td>缓存命中率</td>
-  <td>94.7%</td>
-  <td>87.5%</td>
-  <td class="diff good">+7.2pp</td>
-</tr>
-<tr>
-  <td>总耗时</td>
-  <td>5.0分钟</td>
-  <td>13.6分钟</td>
-  <td class="diff good">-63.2%</td>
-</tr>
-</tbody>
-</table>
+<!-- 提示词 -->
+<div class="prompt-box">
+  <div class="prompt-header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <span>📝 提示词</span>
+    <span class="prompt-toggle"></span>
+  </div>
+  <pre class="prompt-text">作为系统运维专家，请分析车载设备的日志包：
+文件路径：D:\wxwork\WXWork\1688854746330792\Cache\File\2026-08\log_1787057770338_LS6ANE2R3SK200031.zip
 
-<!-- 逐轮 Token 对比图 -->
-<div class="chart-full">
+这是一个车机设备的诊断日志包，包含 177 个文件，约 103MB。主要包含：
+- vehiclelog：车辆通信日志
+- main_log：Android 系统日志（gzip 压缩）
+- mem_*.txt：内存快照
+- cpuinfo_*：CPU 使用记录
+- kernel_log：内核日志
+
+请完成：
+1. 解压并读取关键日志文件
+2. 识别异常模式（内存泄漏、CPU 飙高、频繁重启等）
+3. 关联分析不同日志之间的因果关系
+4. 生成专业的诊断报告，包含：
+   - 问题摘要（Top 3 关键问题）
+   - 时间线分析（关键事件发生顺序）
+   - 根因分析
+   - 修复建议优先级排序
+   - 预防措施
+5. 把包名是 com.wtcl.electronicdirections 的日志单独提取到一个文件，并分析这个应用可能存在的问题</pre>
+</div>
+
+<!-- 汇总卡片 -->
+<div class="summary-cards">
+  <div class="sum-card">
+    <div class="sum-label">总轮数（有效）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>34(32)</div>
+      <div class="sum-val"><span class="tag without">无</span>94(83)</div>
+    </div>
+    <div class="sum-diff good">-63.8%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">总 Token</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>2.6M</div>
+      <div class="sum-val"><span class="tag without">无</span>4.4M</div>
+    </div>
+    <div class="sum-diff good">-41.3%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">缓存命中率</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>94.7%</div>
+      <div class="sum-val"><span class="tag without">无</span>87.5%</div>
+    </div>
+    <div class="sum-diff good">+7.1pp</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">耗时（墙上时间）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>8.0分钟</div>
+      <div class="sum-val"><span class="tag without">无</span>19.3分钟</div>
+    </div>
+    <div class="sum-diff good">-58.6%</div>
+  </div>
+</div><table class="compare-table">
+<thead><tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr></thead>
+<tbody>
+<tr><td>总轮数</td><td>34（32有效）</td><td>94（83有效）</td><td class="diff good">-63.8%</td></tr>
+<tr><td>总 Token</td><td>2.6M</td><td>4.4M</td><td class="diff good">-41.3%</td></tr>
+<tr><td>输入 Token</td><td>137K</td><td>542K</td><td class="diff good">-74.8%</td></tr>
+<tr><td>输出 Token</td><td>17K</td><td>48K</td><td class="diff good">-64.7%</td></tr>
+<tr><td>缓存读取</td><td>2.4M</td><td>3.8M</td><td class="diff bad">-36.2%</td></tr>
+<tr><td>缓存命中率</td><td>94.7%</td><td>87.5%</td><td class="diff good">+7.1pp</td></tr>
+<tr><td>耗时（墙上时间）</td><td>8.0分钟</td><td>19.3分钟</td><td class="diff good">-58.6%</td></tr>
+<tr><td>ctx 工具调用</td><td>173次</td><td>0次</td><td>—</td></tr>
+</tbody></table><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮 Token 用量对比（堆叠 = 新输入 + 缓存读取 + 输出）</h4>
     <div class="canvas-wrap tall"><canvas id="chartToken-1"></canvas></div>
   </div>
-</div>
-
-<!-- 缓存命中率趋势 -->
-<div class="chart-full">
+</div><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮缓存命中率趋势对比</h4>
     <div class="canvas-wrap"><canvas id="chartCache-1"></canvas></div>
   </div>
+</div><div class="section">
+  <div class="section-title">工具调用次数对比</div>
+  <table class="tool-table">
+<thead><tr><th>工具</th><th class="with-col">有插件</th><th class="without-col">无插件</th></tr></thead>
+<tbody><tr><td>mcp__context-mode__ctx_batch_execute</td><td class="with-col">47</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_execute</td><td class="with-col">101</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_search</td><td class="with-col">25</td><td class="without-col">—</td></tr><tr><td>Agent</td><td class="with-col">—</td><td class="without-col">69</td></tr><tr><td>Bash</td><td class="with-col">217</td><td class="without-col">797</td></tr><tr><td>Glob</td><td class="with-col">—</td><td class="without-col">4</td></tr><tr><td>Grep</td><td class="with-col">—</td><td class="without-col">12</td></tr><tr><td>Read</td><td class="with-col">42</td><td class="without-col">157</td></tr><tr><td>TaskCreate</td><td class="with-col">31</td><td class="without-col">185</td></tr><tr><td>TaskUpdate</td><td class="with-col">31</td><td class="without-col">163</td></tr><tr><td>Write</td><td class="with-col">2</td><td class="without-col">2</td></tr></tbody></table>
 </div>
-
-<!-- 提示词成分占比 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h4>提示词成分占比 — 有插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWith-1"></canvas></div>
-  </div>
-  <div class="chart-box">
-    <h4>提示词成分占比 — 无插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWithout-1"></canvas></div>
-  </div>
-</div>
-
 </div></div>
     <div class="panel" id="panel-s2"><div class="scenario-section">
 <h2>场景2：代码优化</h2>
 
-<!-- 指标对比小表 -->
-<table class="compare-table">
-<thead>
-<tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr>
-</thead>
-<tbody>
-<tr>
-  <td>有效轮数</td>
-  <td>31</td>
-  <td>35</td>
-  <td class="diff good">-11.4%</td>
-</tr>
-<tr>
-  <td>总 Token</td>
-  <td>3.0M</td>
-  <td>2.0M</td>
-  <td class="diff bad">+46.6%</td>
-</tr>
-<tr>
-  <td>新输入 Token</td>
-  <td>100K</td>
-  <td>101K</td>
-  <td class="diff neutral">-0.9%</td>
-</tr>
-<tr>
-  <td>输出 Token</td>
-  <td>62K</td>
-  <td>34K</td>
-  <td class="diff bad">+85.4%</td>
-</tr>
-<tr>
-  <td>缓存命中率</td>
-  <td>96.6%</td>
-  <td>94.9%</td>
-  <td class="diff good">+1.7pp</td>
-</tr>
-<tr>
-  <td>总耗时</td>
-  <td>13.3分钟</td>
-  <td>8.3分钟</td>
-  <td class="diff bad">+60.2%</td>
-</tr>
-</tbody>
-</table>
+<!-- 提示词 -->
+<div class="prompt-box">
+  <div class="prompt-header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <span>📝 提示词</span>
+    <span class="prompt-toggle"></span>
+  </div>
+  <pre class="prompt-text">请优化智慧加油小程序项目中 pages/detail/detail.vue 文件：
+项目在 taro_refuel_6_A_新主线 这个目录下
 
-<!-- 逐轮 Token 对比图 -->
-<div class="chart-full">
+这个文件是项目中最大的单文件组件，职责过多，难以维护。请：
+1. 分析组件结构，识别可拆分的子组件
+2. 在新目录 E:\WT\save-tokens\refactored-detail 下实现重构后的代码
+3. 将其拆分为 3-5 个子组件
+4. 提取业务逻辑到独立的 composables/hooks
+5. 保持功能不变，提升代码可维护性
+
+注意：不要修改原始项目代码，所有重构代码放在新目录中。</pre>
+</div>
+
+<!-- 汇总卡片 -->
+<div class="summary-cards">
+  <div class="sum-card">
+    <div class="sum-label">总轮数（有效）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>33(31)</div>
+      <div class="sum-val"><span class="tag without">无</span>37(35)</div>
+    </div>
+    <div class="sum-diff good">-10.8%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">总 Token</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>3.0M</div>
+      <div class="sum-val"><span class="tag without">无</span>2.0M</div>
+    </div>
+    <div class="sum-diff bad">+46.6%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">缓存命中率</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>96.6%</div>
+      <div class="sum-val"><span class="tag without">无</span>94.9%</div>
+    </div>
+    <div class="sum-diff good">+1.6pp</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">耗时（墙上时间）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>14.8分钟</div>
+      <div class="sum-val"><span class="tag without">无</span>15.0分钟</div>
+    </div>
+    <div class="sum-diff good">-1.6%</div>
+  </div>
+</div><table class="compare-table">
+<thead><tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr></thead>
+<tbody>
+<tr><td>总轮数</td><td>33（31有效）</td><td>37（35有效）</td><td class="diff good">-10.8%</td></tr>
+<tr><td>总 Token</td><td>3.0M</td><td>2.0M</td><td class="diff bad">+46.6%</td></tr>
+<tr><td>输入 Token</td><td>100K</td><td>101K</td><td class="diff neutral">-0.9%</td></tr>
+<tr><td>输出 Token</td><td>62K</td><td>34K</td><td class="diff bad">+85.4%</td></tr>
+<tr><td>缓存读取</td><td>2.8M</td><td>1.9M</td><td class="diff good">+48.5%</td></tr>
+<tr><td>缓存命中率</td><td>96.6%</td><td>94.9%</td><td class="diff good">+1.6pp</td></tr>
+<tr><td>耗时（墙上时间）</td><td>14.8分钟</td><td>15.0分钟</td><td class="diff good">-1.6%</td></tr>
+<tr><td>ctx 工具调用</td><td>26次</td><td>0次</td><td>—</td></tr>
+</tbody></table><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮 Token 用量对比（堆叠 = 新输入 + 缓存读取 + 输出）</h4>
     <div class="canvas-wrap tall"><canvas id="chartToken-2"></canvas></div>
   </div>
-</div>
-
-<!-- 缓存命中率趋势 -->
-<div class="chart-full">
+</div><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮缓存命中率趋势对比</h4>
     <div class="canvas-wrap"><canvas id="chartCache-2"></canvas></div>
   </div>
+</div><div class="section">
+  <div class="section-title">工具调用次数对比</div>
+  <table class="tool-table">
+<thead><tr><th>工具</th><th class="with-col">有插件</th><th class="without-col">无插件</th></tr></thead>
+<tbody><tr><td>mcp__plugin_context-mode_context-mode__ctx_execute_file</td><td class="with-col">26</td><td class="without-col">—</td></tr><tr><td>Bash</td><td class="with-col">148</td><td class="without-col">188</td></tr><tr><td>Edit</td><td class="with-col">8</td><td class="without-col">—</td></tr><tr><td>Read</td><td class="with-col">25</td><td class="without-col">58</td></tr><tr><td>TaskCreate</td><td class="with-col">115</td><td class="without-col">102</td></tr><tr><td>TaskUpdate</td><td class="with-col">123</td><td class="without-col">114</td></tr><tr><td>Write</td><td class="with-col">161</td><td class="without-col">180</td></tr></tbody></table>
 </div>
-
-<!-- 提示词成分占比 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h4>提示词成分占比 — 有插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWith-2"></canvas></div>
-  </div>
-  <div class="chart-box">
-    <h4>提示词成分占比 — 无插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWithout-2"></canvas></div>
-  </div>
-</div>
-
 </div></div>
     <div class="panel" id="panel-s3"><div class="scenario-section">
 <h2>场景3：2048游戏</h2>
 
-<!-- 指标对比小表 -->
-<table class="compare-table">
-<thead>
-<tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr>
-</thead>
-<tbody>
-<tr>
-  <td>有效轮数</td>
-  <td>15</td>
-  <td>7</td>
-  <td class="diff bad">+114.3%</td>
-</tr>
-<tr>
-  <td>总 Token</td>
-  <td>886K</td>
-  <td>215K</td>
-  <td class="diff bad">+312.0%</td>
-</tr>
-<tr>
-  <td>新输入 Token</td>
-  <td>83K</td>
-  <td>38K</td>
-  <td class="diff bad">+115.4%</td>
-</tr>
-<tr>
-  <td>输出 Token</td>
-  <td>27K</td>
-  <td>10K</td>
-  <td class="diff bad">+176.0%</td>
-</tr>
-<tr>
-  <td>缓存命中率</td>
-  <td>90.4%</td>
-  <td>81.3%</td>
-  <td class="diff good">+9.1pp</td>
-</tr>
-<tr>
-  <td>总耗时</td>
-  <td>6.1分钟</td>
-  <td>2.3分钟</td>
-  <td class="diff bad">+165.2%</td>
-</tr>
-</tbody>
-</table>
+<!-- 提示词 -->
+<div class="prompt-box">
+  <div class="prompt-header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <span>📝 提示词</span>
+    <span class="prompt-toggle"></span>
+  </div>
+  <pre class="prompt-text">从0开发一个 2048 数字游戏：先写 PRD（必须带 Mermaid 流程图），再实现为单个 HTML 文件（纯前端，支持键盘和触屏，有音效和动画，UI 美观，最高分用 LocalStorage 保存）。</pre>
+</div>
 
-<!-- 逐轮 Token 对比图 -->
-<div class="chart-full">
+<!-- 汇总卡片 -->
+<div class="summary-cards">
+  <div class="sum-card">
+    <div class="sum-label">总轮数（有效）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>16(15)</div>
+      <div class="sum-val"><span class="tag without">无</span>8(7)</div>
+    </div>
+    <div class="sum-diff bad">+100.0%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">总 Token</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>886K</div>
+      <div class="sum-val"><span class="tag without">无</span>215K</div>
+    </div>
+    <div class="sum-diff bad">+312.0%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">缓存命中率</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>90.4%</div>
+      <div class="sum-val"><span class="tag without">无</span>81.3%</div>
+    </div>
+    <div class="sum-diff good">+9.1pp</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">耗时（墙上时间）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>7.0分钟</div>
+      <div class="sum-val"><span class="tag without">无</span>2.6分钟</div>
+    </div>
+    <div class="sum-diff bad">+169.0%</div>
+  </div>
+</div><table class="compare-table">
+<thead><tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr></thead>
+<tbody>
+<tr><td>总轮数</td><td>16（15有效）</td><td>8（7有效）</td><td class="diff bad">+100.0%</td></tr>
+<tr><td>总 Token</td><td>886K</td><td>215K</td><td class="diff bad">+312.0%</td></tr>
+<tr><td>输入 Token</td><td>83K</td><td>38K</td><td class="diff bad">+115.4%</td></tr>
+<tr><td>输出 Token</td><td>27K</td><td>10K</td><td class="diff bad">+176.0%</td></tr>
+<tr><td>缓存读取</td><td>776K</td><td>167K</td><td class="diff good">+365.1%</td></tr>
+<tr><td>缓存命中率</td><td>90.4%</td><td>81.3%</td><td class="diff good">+9.1pp</td></tr>
+<tr><td>耗时（墙上时间）</td><td>7.0分钟</td><td>2.6分钟</td><td class="diff bad">+169.0%</td></tr>
+<tr><td>ctx 工具调用</td><td>5次</td><td>0次</td><td>—</td></tr>
+</tbody></table><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮 Token 用量对比（堆叠 = 新输入 + 缓存读取 + 输出）</h4>
     <div class="canvas-wrap tall"><canvas id="chartToken-3"></canvas></div>
   </div>
-</div>
-
-<!-- 缓存命中率趋势 -->
-<div class="chart-full">
+</div><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮缓存命中率趋势对比</h4>
     <div class="canvas-wrap"><canvas id="chartCache-3"></canvas></div>
   </div>
+</div><div class="section">
+  <div class="section-title">工具调用次数对比</div>
+  <table class="tool-table">
+<thead><tr><th>工具</th><th class="with-col">有插件</th><th class="without-col">无插件</th></tr></thead>
+<tbody><tr><td>mcp__context-mode__ctx_execute</td><td class="with-col">2</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_execute_file</td><td class="with-col">3</td><td class="without-col">—</td></tr><tr><td>Bash</td><td class="with-col">14</td><td class="without-col">1</td></tr><tr><td>Edit</td><td class="with-col">30</td><td class="without-col">—</td></tr><tr><td>TaskCreate</td><td class="with-col">26</td><td class="without-col">12</td></tr><tr><td>TaskUpdate</td><td class="with-col">33</td><td class="without-col">12</td></tr><tr><td>Write</td><td class="with-col">20</td><td class="without-col">6</td></tr></tbody></table>
 </div>
-
-<!-- 提示词成分占比 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h4>提示词成分占比 — 有插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWith-3"></canvas></div>
-  </div>
-  <div class="chart-box">
-    <h4>提示词成分占比 — 无插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWithout-3"></canvas></div>
-  </div>
-</div>
-
 </div></div>
     <div class="panel" id="panel-s4"><div class="scenario-section">
 <h2>场景4：书籍分析</h2>
 
-<!-- 指标对比小表 -->
-<table class="compare-table">
-<thead>
-<tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr>
-</thead>
-<tbody>
-<tr>
-  <td>有效轮数</td>
-  <td>31</td>
-  <td>23</td>
-  <td class="diff bad">+34.8%</td>
-</tr>
-<tr>
-  <td>总 Token</td>
-  <td>3.1M</td>
-  <td>2.0M</td>
-  <td class="diff bad">+56.3%</td>
-</tr>
-<tr>
-  <td>新输入 Token</td>
-  <td>249K</td>
-  <td>294K</td>
-  <td class="diff good">-15.2%</td>
-</tr>
-<tr>
-  <td>输出 Token</td>
-  <td>47K</td>
-  <td>35K</td>
-  <td class="diff bad">+36.1%</td>
-</tr>
-<tr>
-  <td>缓存命中率</td>
-  <td>91.8%</td>
-  <td>84.9%</td>
-  <td class="diff good">+6.9pp</td>
-</tr>
-<tr>
-  <td>总耗时</td>
-  <td>12.2分钟</td>
-  <td>8.9分钟</td>
-  <td class="diff bad">+37.1%</td>
-</tr>
-</tbody>
-</table>
+<!-- 提示词 -->
+<div class="prompt-box">
+  <div class="prompt-header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <span>📝 提示词</span>
+    <span class="prompt-toggle"></span>
+  </div>
+  <pre class="prompt-text">请深度分析 AI-Agents-in-Depth-zh-CN.epub
 
-<!-- 逐轮 Token 对比图 -->
-<div class="chart-full">
+【第1轮】书籍结构概览：梳理全书 10 章的结构和逻辑关系，识别核心概念和关键术语，输出章节结构图 + 核心概念清单
+【第2轮】技术体系分析：重点分析第一部分&quot;如何构建 Agent&quot;（第1-6章），总结 Agent 架构模式（ReAct、Harness、工具系统等），分析提示工程的核心原则，输出技术架构图 + 提示工程最佳实践
+【第3轮】工程实践分析：重点分析第二部分&quot;训练 Agent&quot;（第7-9章），分析评估方法论（LLM-as-a-Judge、自动化评估等），总结模型训练策略（SFT、RL），输出评估框架 + 训练流程
+【第4轮】案例与应用分析：识别书中提到的实际案例和代码示例，分析 Coding Agent 的实现方式，总结 Agent 安全边界的处理方法，输出案例汇总 + 实践建议
+【第5轮】综合评价与建议：评估本书的优缺点，与同类书籍对比，针对不同读者群体的阅读建议，提出可以深入研究的方向，输出书评 + 学习路线图
+
+把之前的输出都写到本地文档里</pre>
+</div>
+
+<!-- 汇总卡片 -->
+<div class="summary-cards">
+  <div class="sum-card">
+    <div class="sum-label">总轮数（有效）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>41(31)</div>
+      <div class="sum-val"><span class="tag without">无</span>42(23)</div>
+    </div>
+    <div class="sum-diff good">-2.4%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">总 Token</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>3.1M</div>
+      <div class="sum-val"><span class="tag without">无</span>2.0M</div>
+    </div>
+    <div class="sum-diff bad">+56.3%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">缓存命中率</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>91.8%</div>
+      <div class="sum-val"><span class="tag without">无</span>84.9%</div>
+    </div>
+    <div class="sum-diff good">+6.9pp</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">耗时（墙上时间）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>13.4分钟</div>
+      <div class="sum-val"><span class="tag without">无</span>11.0分钟</div>
+    </div>
+    <div class="sum-diff bad">+22.1%</div>
+  </div>
+</div><table class="compare-table">
+<thead><tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr></thead>
+<tbody>
+<tr><td>总轮数</td><td>41（31有效）</td><td>42（23有效）</td><td class="diff good">-2.4%</td></tr>
+<tr><td>总 Token</td><td>3.1M</td><td>2.0M</td><td class="diff bad">+56.3%</td></tr>
+<tr><td>输入 Token</td><td>249K</td><td>294K</td><td class="diff good">-15.2%</td></tr>
+<tr><td>输出 Token</td><td>47K</td><td>35K</td><td class="diff bad">+36.1%</td></tr>
+<tr><td>缓存读取</td><td>2.8M</td><td>1.7M</td><td class="diff good">+69.4%</td></tr>
+<tr><td>缓存命中率</td><td>91.8%</td><td>84.9%</td><td class="diff good">+6.9pp</td></tr>
+<tr><td>耗时（墙上时间）</td><td>13.4分钟</td><td>11.0分钟</td><td class="diff bad">+22.1%</td></tr>
+<tr><td>ctx 工具调用</td><td>315次</td><td>0次</td><td>—</td></tr>
+</tbody></table><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮 Token 用量对比（堆叠 = 新输入 + 缓存读取 + 输出）</h4>
     <div class="canvas-wrap tall"><canvas id="chartToken-4"></canvas></div>
   </div>
-</div>
-
-<!-- 缓存命中率趋势 -->
-<div class="chart-full">
+</div><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮缓存命中率趋势对比</h4>
     <div class="canvas-wrap"><canvas id="chartCache-4"></canvas></div>
   </div>
+</div><div class="section">
+  <div class="section-title">工具调用次数对比</div>
+  <table class="tool-table">
+<thead><tr><th>工具</th><th class="with-col">有插件</th><th class="without-col">无插件</th></tr></thead>
+<tbody><tr><td>mcp__plugin_context-mode_context-mode__ctx_execute</td><td class="with-col">315</td><td class="without-col">—</td></tr><tr><td>Agent</td><td class="with-col">—</td><td class="without-col">12</td></tr><tr><td>Bash</td><td class="with-col">—</td><td class="without-col">51</td></tr><tr><td>Glob</td><td class="with-col">29</td><td class="without-col">—</td></tr><tr><td>Grep</td><td class="with-col">—</td><td class="without-col">13</td></tr><tr><td>Read</td><td class="with-col">—</td><td class="without-col">96</td></tr><tr><td>TaskCreate</td><td class="with-col">—</td><td class="without-col">12</td></tr><tr><td>TaskUpdate</td><td class="with-col">—</td><td class="without-col">15</td></tr><tr><td>Write</td><td class="with-col">48</td><td class="without-col">—</td></tr></tbody></table>
 </div>
-
-<!-- 提示词成分占比 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h4>提示词成分占比 — 有插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWith-4"></canvas></div>
-  </div>
-  <div class="chart-box">
-    <h4>提示词成分占比 — 无插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWithout-4"></canvas></div>
-  </div>
-</div>
-
 </div></div>
     <div class="panel" id="panel-s5"><div class="scenario-section">
 <h2>场景5：项目逆向分析</h2>
 
-<!-- 指标对比小表 -->
-<table class="compare-table">
-<thead>
-<tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr>
-</thead>
-<tbody>
-<tr>
-  <td>有效轮数</td>
-  <td>68</td>
-  <td>35</td>
-  <td class="diff bad">+94.3%</td>
-</tr>
-<tr>
-  <td>总 Token</td>
-  <td>4.1M</td>
-  <td>2.3M</td>
-  <td class="diff bad">+78.7%</td>
-</tr>
-<tr>
-  <td>新输入 Token</td>
-  <td>450K</td>
-  <td>277K</td>
-  <td class="diff bad">+62.5%</td>
-</tr>
-<tr>
-  <td>输出 Token</td>
-  <td>86K</td>
-  <td>30K</td>
-  <td class="diff bad">+186.8%</td>
-</tr>
-<tr>
-  <td>缓存命中率</td>
-  <td>88.9%</td>
-  <td>87.9%</td>
-  <td class="diff good">+1.0pp</td>
-</tr>
-<tr>
-  <td>总耗时</td>
-  <td>22.0分钟</td>
-  <td>8.0分钟</td>
-  <td class="diff bad">+175.0%</td>
-</tr>
-</tbody>
-</table>
+<!-- 提示词 -->
+<div class="prompt-box">
+  <div class="prompt-header" onclick="this.parentElement.classList.toggle('collapsed')">
+    <span>📝 提示词</span>
+    <span class="prompt-toggle"></span>
+  </div>
+  <pre class="prompt-text">请全面分析智慧加油小程序项目，逆向生成完整的产品需求文档和测试用例：
+项目在 taro_refuel_6_A_新主线 这个目录下
 
-<!-- 逐轮 Token 对比图 -->
-<div class="chart-full">
+## 第一部分：产品需求文档（PRD）
+1. 项目概述：分析项目整体结构，理解产品定位，识别目标用户和使用场景，梳理核心功能模块
+2. 功能清单：逐一分析 src/pages/index1/、src/pages/detail/、src/pages/order/、src/pages/ucenter/、src/pages/oilCashback/、src/pages/activity/、src/component/ 等页面
+3. 业务流程图（必须包含 Mermaid 流程图）：用户加油完整流程、订单创建流程、支付流程、用户登录/注册流程、返现领取流程
+4. 数据模型：分析 API 接口定义，推导数据模型结构，列出关键数据实体
+5. 页面交互说明：每个页面的交互逻辑、页面间跳转关系、异常处理流程
+
+## 第二部分：详细测试用例
+为每个功能模块编写测试用例（格式：用例编号、模块、标题、前置条件、测试步骤、预期结果、优先级、测试类型），覆盖首页模块（10+）、加油详情页（15+）、订单模块（15+）、个人中心（10+）、支付流程（10+）、异常场景（10+）、边界测试、兼容性测试
+
+## 第三部分：输出要求
+1. 生成完整的 PRD 文档（Markdown 格式）
+2. 生成完整的测试用例表格（Markdown 格式）
+3. 所有流程图使用 Mermaid 语法
+4. 输出目录：E:\WT\save-tokens\project-docs\
+5. 文件命名：PRD.md、test-cases.md、data-model.md、flow-diagrams.md</pre>
+</div>
+
+<!-- 汇总卡片 -->
+<div class="summary-cards">
+  <div class="sum-card">
+    <div class="sum-label">总轮数（有效）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>78(68)</div>
+      <div class="sum-val"><span class="tag without">无</span>43(35)</div>
+    </div>
+    <div class="sum-diff bad">+81.4%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">总 Token</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>4.1M</div>
+      <div class="sum-val"><span class="tag without">无</span>2.3M</div>
+    </div>
+    <div class="sum-diff bad">+78.7%</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">缓存命中率</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>88.9%</div>
+      <div class="sum-val"><span class="tag without">无</span>87.9%</div>
+    </div>
+    <div class="sum-diff good">+1.0pp</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">耗时（墙上时间）</div>
+    <div class="sum-values">
+      <div class="sum-val"><span class="tag with">有</span>11.7分钟</div>
+      <div class="sum-val"><span class="tag without">无</span>8.6分钟</div>
+    </div>
+    <div class="sum-diff bad">+37.1%</div>
+  </div>
+</div><div class="note">⚠ 检测到并发请求：有插件 ID 乱序 17 次，无插件 ID 乱序 0 次。墙上时间已排除并发重叠。</div><table class="compare-table">
+<thead><tr><th>指标</th><th>有插件</th><th>无插件</th><th>差值</th></tr></thead>
+<tbody>
+<tr><td>总轮数</td><td>78（68有效）</td><td>43（35有效）</td><td class="diff bad">+81.4%</td></tr>
+<tr><td>总 Token</td><td>4.1M</td><td>2.3M</td><td class="diff bad">+78.7%</td></tr>
+<tr><td>输入 Token</td><td>450K</td><td>277K</td><td class="diff bad">+62.5%</td></tr>
+<tr><td>输出 Token</td><td>86K</td><td>30K</td><td class="diff bad">+186.8%</td></tr>
+<tr><td>缓存读取</td><td>3.6M</td><td>2.0M</td><td class="diff good">+79.3%</td></tr>
+<tr><td>缓存命中率</td><td>88.9%</td><td>87.9%</td><td class="diff good">+1.0pp</td></tr>
+<tr><td>耗时（墙上时间）</td><td>11.7分钟</td><td>8.6分钟</td><td class="diff bad">+37.1%</td></tr>
+<tr><td>ctx 工具调用</td><td>52次</td><td>0次</td><td>—</td></tr>
+</tbody></table><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮 Token 用量对比（堆叠 = 新输入 + 缓存读取 + 输出）</h4>
     <div class="canvas-wrap tall"><canvas id="chartToken-5"></canvas></div>
   </div>
-</div>
-
-<!-- 缓存命中率趋势 -->
-<div class="chart-full">
+</div><div class="chart-full">
   <div class="chart-box">
     <h4>逐轮缓存命中率趋势对比</h4>
     <div class="canvas-wrap"><canvas id="chartCache-5"></canvas></div>
   </div>
+</div><div class="section">
+  <div class="section-title">工具调用次数对比</div>
+  <table class="tool-table">
+<thead><tr><th>工具</th><th class="with-col">有插件</th><th class="without-col">无插件</th></tr></thead>
+<tbody><tr><td>mcp__context-mode__ctx_execute_file</td><td class="with-col">13</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_batch_execute</td><td class="with-col">11</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_execute_file</td><td class="with-col">22</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_search</td><td class="with-col">6</td><td class="without-col">—</td></tr><tr><td>Agent</td><td class="with-col">244</td><td class="without-col">11</td></tr><tr><td>Bash</td><td class="with-col">1</td><td class="without-col">79</td></tr><tr><td>Glob</td><td class="with-col">9</td><td class="without-col">34</td></tr><tr><td>Read</td><td class="with-col">109</td><td class="without-col">282</td></tr><tr><td>TaskCreate</td><td class="with-col">139</td><td class="without-col">82</td></tr><tr><td>TaskUpdate</td><td class="with-col">146</td><td class="without-col">69</td></tr><tr><td>Write</td><td class="with-col">26</td><td class="without-col">26</td></tr></tbody></table>
 </div>
-
-<!-- 提示词成分占比 -->
-<div class="chart-row">
-  <div class="chart-box">
-    <h4>提示词成分占比 — 有插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWith-5"></canvas></div>
-  </div>
-  <div class="chart-box">
-    <h4>提示词成分占比 — 无插件</h4>
-    <div class="canvas-wrap"><canvas id="chartPromptWithout-5"></canvas></div>
-  </div>
-</div>
-
 </div></div>
-    <div class="panel" id="panel-tools">
-      <div class="section">
-<div class="section-title">工具调用次数对比</div>
-<div style="overflow-x:auto;">
-<table class="tool-table">
-<thead>
-<tr>
-  <th>工具</th><th class="with-col">日志分析<br>有插件</th><th class="without-col">日志分析<br>无插件</th><th class="with-col">代码优化<br>有插件</th><th class="without-col">代码优化<br>无插件</th><th class="with-col">2048游戏<br>有插件</th><th class="without-col">2048游戏<br>无插件</th><th class="with-col">书籍分析<br>有插件</th><th class="without-col">书籍分析<br>无插件</th><th class="with-col">项目逆向分析<br>有插件</th><th class="without-col">项目逆向分析<br>无插件</th></tr>
-</thead>
-<tbody><tr><td>mcp__context-mode__ctx_batch_execute</td><td class="with-col">47</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_execute</td><td class="with-col">101</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">2</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_execute_file</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">3</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">13</td><td class="without-col">—</td></tr><tr><td>mcp__context-mode__ctx_search</td><td class="with-col">25</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_batch_execute</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">11</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_execute</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">315</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_execute_file</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">26</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">22</td><td class="without-col">—</td></tr><tr><td>mcp__plugin_context-mode_context-mode__ctx_search</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">6</td><td class="without-col">—</td></tr><tr><td>Agent</td><td class="with-col">—</td><td class="without-col">69</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">12</td><td class="with-col">244</td><td class="without-col">11</td></tr><tr><td>Bash</td><td class="with-col">217</td><td class="without-col">797</td><td class="with-col">148</td><td class="without-col">188</td><td class="with-col">14</td><td class="without-col">1</td><td class="with-col">—</td><td class="without-col">51</td><td class="with-col">1</td><td class="without-col">79</td></tr><tr><td>Edit</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">8</td><td class="without-col">—</td><td class="with-col">30</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>Glob</td><td class="with-col">—</td><td class="without-col">4</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">29</td><td class="without-col">—</td><td class="with-col">9</td><td class="without-col">34</td></tr><tr><td>Grep</td><td class="with-col">—</td><td class="without-col">12</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">13</td><td class="with-col">—</td><td class="without-col">—</td></tr><tr><td>Read</td><td class="with-col">42</td><td class="without-col">157</td><td class="with-col">25</td><td class="without-col">58</td><td class="with-col">—</td><td class="without-col">—</td><td class="with-col">—</td><td class="without-col">96</td><td class="with-col">109</td><td class="without-col">282</td></tr><tr><td>TaskCreate</td><td class="with-col">31</td><td class="without-col">185</td><td class="with-col">115</td><td class="without-col">102</td><td class="with-col">26</td><td class="without-col">12</td><td class="with-col">—</td><td class="without-col">12</td><td class="with-col">139</td><td class="without-col">82</td></tr><tr><td>TaskUpdate</td><td class="with-col">31</td><td class="without-col">163</td><td class="with-col">123</td><td class="without-col">114</td><td class="with-col">33</td><td class="without-col">12</td><td class="with-col">—</td><td class="without-col">15</td><td class="with-col">146</td><td class="without-col">69</td></tr><tr><td>Write</td><td class="with-col">2</td><td class="without-col">2</td><td class="with-col">161</td><td class="without-col">180</td><td class="with-col">20</td><td class="without-col">6</td><td class="with-col">48</td><td class="without-col">—</td><td class="with-col">26</td><td class="without-col">26</td></tr></tbody></table></div></div>
-    </div>
-    <div class="panel" id="panel-conclusion">
-      <div class="section conclusion">
-<h2>结论摘要</h2>
-<ul><li><strong>场景1：日志分析：</strong>有插件 Token -41.3%，耗时 -63.2%，缓存命中率 +7.2pp。有插件显著更优</li><li><strong>场景2：代码优化：</strong>有插件 Token +46.6%，耗时 +60.2%，缓存命中率 +1.7pp。无插件更优（注意：两次运行任务量不同，非直接可比）</li><li><strong>场景3：2048游戏：</strong>有插件 Token +312.0%，耗时 +165.2%，缓存命中率 +9.1pp。无插件更优（注意：两次运行任务量不同，非直接可比）</li><li><strong>场景4：书籍分析：</strong>有插件 Token +56.3%，耗时 +37.1%，缓存命中率 +6.9pp。无插件更优（注意：两次运行任务量不同，非直接可比）</li><li><strong>场景5：项目逆向分析：</strong>有插件 Token +78.7%，耗时 +175.0%，缓存命中率 +1.0pp。无插件更优（注意：两次运行任务量不同，非直接可比）</li></ul>
-<p style="margin-top:12px;font-size:13px;color:var(--text-secondary);">
-⚠ 注意：场景 2-5 中，有插件和无插件的运行轮数不同，说明两次独立运行的任务执行路径不同，对比数据仅反映两次实际运行的差异，不能简单归因于插件效果。场景 1 的两次运行任务量接近，更具参考价值。
-</p>
-</div>
-    </div>
   </div>
 </div>
 <script>
-const chartInstances = {};
 const chartInited = {};
 
 function initCharts_s1() {
@@ -753,9 +793,9 @@ function initCharts_s1() {
   chartInited['s1'] = true;
 
   (function() {
-    const ctx = document.getElementById('chartToken-1');
+    var ctx = document.getElementById('chartToken-1');
     if (!ctx) return;
-    chartInstances['chartToken-1'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R55","R56","R57","R58","R59","R60","R61","R62","R63","R64","R65","R66","R67","R68","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R81","R82","R83"],
@@ -769,20 +809,19 @@ function initCharts_s1() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
           x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } } },
-          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v; } } }
         },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
   (function() {
-    const ctx = document.getElementById('chartCache-1');
+    var ctx = document.getElementById('chartCache-1');
     if (!ctx) return;
-    chartInstances['chartCache-1'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R55","R56","R57","R58","R59","R60","R61","R62","R63","R64","R65","R66","R67","R68","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R81","R82","R83"],
@@ -792,59 +831,21 @@ function initCharts_s1() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } } },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: function(v) { return v + '%'; } } } },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWith-1');
-    if (!ctx) return;
-    chartInstances['chartPromptWith-1'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28950,9480,13326,14394,232,28984,183805], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWithout-1');
-    if (!ctx) return;
-    chartInstances['chartPromptWithout-1'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28953,6118,4405,7034,300,19604,110641], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();}
+}
 function initCharts_s2() {
   if (chartInited['s2']) return;
   chartInited['s2'] = true;
 
   (function() {
-    const ctx = document.getElementById('chartToken-2');
+    var ctx = document.getElementById('chartToken-2');
     if (!ctx) return;
-    chartInstances['chartToken-2'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35"],
@@ -858,20 +859,19 @@ function initCharts_s2() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
           x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } } },
-          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v; } } }
         },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
   (function() {
-    const ctx = document.getElementById('chartCache-2');
+    var ctx = document.getElementById('chartCache-2');
     if (!ctx) return;
-    chartInstances['chartCache-2'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35"],
@@ -881,59 +881,21 @@ function initCharts_s2() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } } },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: function(v) { return v + '%'; } } } },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWith-2');
-    if (!ctx) return;
-    chartInstances['chartPromptWith-2'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28950,12555,17663,136476,210,85470,93535], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWithout-2');
-    if (!ctx) return;
-    chartInstances['chartPromptWithout-2'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28953,6118,4182,14182,622,107168,95063], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();}
+}
 function initCharts_s3() {
   if (chartInited['s3']) return;
   chartInited['s3'] = true;
 
   (function() {
-    const ctx = document.getElementById('chartToken-3');
+    var ctx = document.getElementById('chartToken-3');
     if (!ctx) return;
-    chartInstances['chartToken-3'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15"],
@@ -947,20 +909,19 @@ function initCharts_s3() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
           x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } } },
-          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v; } } }
         },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
   (function() {
-    const ctx = document.getElementById('chartCache-3');
+    var ctx = document.getElementById('chartCache-3');
     if (!ctx) return;
-    chartInstances['chartCache-3'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15"],
@@ -970,59 +931,21 @@ function initCharts_s3() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } } },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: function(v) { return v + '%'; } } } },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWith-3');
-    if (!ctx) return;
-    chartInstances['chartPromptWith-3'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28952,12555,17103,34180,277,33541,6458], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWithout-3');
-    if (!ctx) return;
-    chartInstances['chartPromptWithout-3'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28955,6118,4009,1301,16,25059,807], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();}
+}
 function initCharts_s4() {
   if (chartInited['s4']) return;
   chartInited['s4'] = true;
 
   (function() {
-    const ctx = document.getElementById('chartToken-4');
+    var ctx = document.getElementById('chartToken-4');
     if (!ctx) return;
-    chartInstances['chartToken-4'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31"],
@@ -1036,20 +959,19 @@ function initCharts_s4() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
           x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } } },
-          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v; } } }
         },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
   (function() {
-    const ctx = document.getElementById('chartCache-4');
+    var ctx = document.getElementById('chartCache-4');
     if (!ctx) return;
-    chartInstances['chartCache-4'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31"],
@@ -1059,59 +981,21 @@ function initCharts_s4() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } } },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: function(v) { return v + '%'; } } } },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWith-4');
-    if (!ctx) return;
-    chartInstances['chartPromptWith-4'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28950,12555,83301,0,0,0,0], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWithout-4');
-    if (!ctx) return;
-    chartInstances['chartPromptWithout-4'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28953,6118,40442,1904,25657,476,132622], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();}
+}
 function initCharts_s5() {
   if (chartInited['s5']) return;
   chartInited['s5'] = true;
 
   (function() {
-    const ctx = document.getElementById('chartToken-5');
+    var ctx = document.getElementById('chartToken-5');
     if (!ctx) return;
-    chartInstances['chartToken-5'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R55","R56","R57","R58","R59","R60","R61","R62","R63","R64","R65","R66","R67","R68"],
@@ -1125,20 +1009,19 @@ function initCharts_s5() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
+        responsive: true, maintainAspectRatio: false, animation: false,
         scales: {
           x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } } },
-          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          y: { stacked: true, title: { display: true, text: 'Tokens' }, ticks: { callback: function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v; } } }
         },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
   (function() {
-    const ctx = document.getElementById('chartCache-5');
+    var ctx = document.getElementById('chartCache-5');
     if (!ctx) return;
-    chartInstances['chartCache-5'] = new Chart(ctx, {
+    new Chart(ctx, {
       type: 'line',
       data: {
         labels: ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R55","R56","R57","R58","R59","R60","R61","R62","R63","R64","R65","R66","R67","R68"],
@@ -1148,67 +1031,27 @@ function initCharts_s5() {
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } } },
+        responsive: true, maintainAspectRatio: false, animation: false,
+        scales: { y: { min: 0, max: 100, title: { display: true, text: '%' }, ticks: { callback: function(v) { return v + '%'; } } } },
         plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }
       }
     });
   })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWith-5');
-    if (!ctx) return;
-    chartInstances['chartPromptWith-5'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28952,12555,75671,7736,625,69998,86556], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();
-  (function() {
-    const ctx = document.getElementById('chartPromptWithout-5');
-    if (!ctx) return;
-    chartInstances['chartPromptWithout-5'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["系统提示","工具定义","用户输入","思考","输出文本","工具调用","工具结果"],
-        datasets: [{ data: [28955,6118,28608,6382,27,41965,143820], backgroundColor: ["#6c5ce7","#00cec9","#0984e3","#fdcb6e","#00b894","#e17055","#d63031"] }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 }, padding: 8 } },
-          tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw >= 1000000 ? (ctx.raw/1000000).toFixed(1)+'M' : ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(0)+'K' : ctx.raw) + ' chars' } }
-        }
-      }
-    });
-  })();}
+}
 
 function switchPanel(panelId, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   document.getElementById(panelId).classList.add('active');
   el.classList.add('active');
 
-  // 初始化对应场景的图表
-  const scenarioMap = { 'panel-s1': 's1', 'panel-s2': 's2', 'panel-s3': 's3', 'panel-s4': 's4', 'panel-s5': 's5' };
-  const sid = scenarioMap[panelId];
+  var scenarioMap = { 'panel-s1': 's1', 'panel-s2': 's2', 'panel-s3': 's3', 'panel-s4': 's4', 'panel-s5': 's5' };
+  var sid = scenarioMap[panelId];
   if (sid && typeof window['initCharts_' + sid] === 'function') {
     setTimeout(function() { window['initCharts_' + sid](); }, 50);
   }
 }
 
-// 页面加载时初始化默认面板的图表
 setTimeout(function() { if (typeof initCharts_s1 === 'function') initCharts_s1(); }, 100);
 
 </script>
