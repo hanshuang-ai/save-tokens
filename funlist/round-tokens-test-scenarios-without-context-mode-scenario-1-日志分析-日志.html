@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逐轮分析报告 — 日志</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ================================================================
+   基础样式
+   ================================================================ */
+:root {
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --accent: #3b82f6;
+    --accent-light: #eff6ff;
+    --accent-dark: #2563eb;
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --yellow: #f59e0b;
+    --yellow-bg: #fffbeb;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --purple: #8b5cf6;
+    --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --header-text: #ffffff;
+    --table-stripe: #f8fafc;
+    --table-header-bg: linear-gradient(135deg, #475569 0%, #334155 100%);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05);
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding-bottom: 40px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ================================================================
+   头部
+   ================================================================ */
+.header {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 28px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(59,130,246,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(139,92,246,0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+.header > * { position: relative; z-index: 1; }
+.header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+.header .meta {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+/* ================================================================
+   容器
+   ================================================================ */
+.container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 28px;
+}
+
+/* ================================================================
+   汇总卡片
+   ================================================================ */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    transition: var(--transition);
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0;
+    transition: var(--transition);
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border);
+}
+.card:hover::before { opacity: 1; }
+.card .label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.card .value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+.card .value.green { color: var(--green); }
+.card .value.yellow { color: var(--yellow); }
+.card .value.red { color: var(--red); }
+.card .sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+/* 缓存命中率大卡片 */
+.card-highlight {
+    grid-column: span 2;
+    background: var(--accent-gradient);
+    color: #fff;
+    border: none;
+}
+.card-highlight::before { background: rgba(255,255,255,0.3); opacity: 1; }
+.card-highlight .label { color: rgba(255,255,255,0.8); }
+.card-highlight .value { color: #fff; font-size: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.card-highlight .sub { color: rgba(255,255,255,0.75); }
+.card-highlight:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* ================================================================
+   章节标题
+   ================================================================ */
+.section {
+    margin-bottom: 36px;
+}
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    color: var(--text);
+}
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: var(--accent-gradient);
+    border-radius: 1px;
+}
+.section-title .icon {
+    font-size: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+.section-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    background: var(--accent-light);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--accent);
+    line-height: 1.7;
+}
+
+/* ================================================================
+   表格包装器（横向滚动）
+   ================================================================ */
+.table-wrap {
+    overflow-x: auto;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 22px;
+    border: 1px solid var(--border-light);
+}
+
+/* ================================================================
+   图表卡片
+   ================================================================ */
+.chart-full {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+}
+.chart-full:hover {
+    box-shadow: var(--shadow);
+}
+.chart-full h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+.chart-full .chart-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    line-height: 1.6;
+}
+.chart-full canvas {
+    width: 100% !important;
+}
+/* 逐轮柱状图滚动容器 */
+.chart-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: var(--radius-sm);
+}
+.chart-scroll-inner {
+    height: 280px;
+}
+
+/* ================================================================
+   表格样式
+   ================================================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    white-space: nowrap;
+}
+thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+thead th {
+    background: var(--table-header-bg);
+    color: #fff;
+    padding: 11px 14px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+thead th:first-child { text-align: center; }
+thead th.col-left { text-align: left; }
+
+tbody td {
+    padding: 9px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s ease;
+}
+tbody td:first-child {
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(241,245,249,0.5);
+}
+tbody td.col-left { text-align: left; }
+
+/* 斑马条纹 */
+tbody tr:nth-child(even) { background: var(--table-stripe); }
+tbody tr:hover { background: var(--accent-light) !important; }
+tbody tr:hover td:first-child { background: rgba(59,130,246,0.1); color: var(--accent-dark); }
+
+/* 错误行灰色 */
+tr.row-error { opacity: 0.45; background: #f8fafc !important; }
+tr.row-error td { color: var(--text-muted); }
+tr.row-error td:first-child { color: var(--text-muted); background: transparent; }
+
+/* 缓存命中率颜色 */
+.rate-high { color: var(--green); font-weight: 700; }
+.rate-mid { color: var(--yellow); font-weight: 700; }
+.rate-low { color: var(--red); font-weight: 700; }
+
+/* 占比进度条 */
+.pct-bar-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.pct-bar {
+    width: 44px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+}
+.pct-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+.pct-bar-fill.sys { background: #8b5cf6; }
+.pct-bar-fill.tools { background: #00cec9; }
+.pct-bar-fill.user { background: var(--accent); }
+.pct-bar-fill.think { background: var(--yellow); }
+.pct-bar-fill.assist { background: var(--green); }
+.pct-bar-fill.tool { background: #f97316; }
+.pct-bar-fill.result { background: var(--red); }
+
+/* ================================================================
+   可折叠区域
+   ================================================================ */
+.collapse-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+.collapse-toggle:hover { background: var(--border-light); }
+.collapse-toggle::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 12px;
+    width: 16px;
+    color: var(--text-secondary);
+}
+.collapse-toggle.open::before {
+    transform: rotate(90deg);
+}
+.collapse-content {
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-content.collapsed {
+    max-height: 0 !important;
+}
+
+/* ================================================================
+   页脚
+   ================================================================ */
+.footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+}
+
+/* ================================================================
+   响应式
+   ================================================================ */
+@media (max-width: 768px) {
+    .container { padding: 14px 16px; }
+    .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card-highlight { grid-column: span 2; }
+    .header { padding: 20px 24px; }
+    .header h1 { font-size: 17px; }
+    .card { padding: 16px 14px; }
+    .card .value { font-size: 24px; }
+    .card-highlight .value { font-size: 32px; }
+    table { font-size: 11px; }
+    thead th, tbody td { padding: 7px 10px; }
+    .chart-full { padding: 16px; }
+    .chart-scroll-inner { height: 240px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     头部
+     ================================================================ -->
+<div class="header">
+    <div>
+        <h1>逐轮分析报告：Token 组成/用量 + 提示词组成/用量</h1>
+        <div class="meta">日志</div>
+    </div>
+    <div class="meta">生成时间：2026/8/20 17:26:46</div>
+</div>
+
+<div class="container">
+
+<!-- ================================================================
+     汇总卡片
+     ================================================================ -->
+<div class="summary-cards">
+    <div class="card">
+        <div class="label">有效轮次</div>
+        <div class="value">83</div>
+        <div class="sub">共 94 轮，11 轮无效</div>
+    </div>
+    <div class="card card-highlight">
+        <div class="label">缓存命中率</div>
+        <div class="value">87.5%</div>
+        <div class="sub">缓存读取 3,794,944 / 总输入 4,336,696</div>
+    </div>
+    <div class="card">
+        <div class="label">总 Token</div>
+        <div class="value">4,384,935</div>
+        <div class="sub">输入 541,752 + 输出 48,239</div>
+    </div>
+    <div class="card">
+        <div class="label">总耗时</div>
+        <div class="value">13.6分钟</div>
+        <div class="sub">平均 9.8秒/轮</div>
+    </div>
+</div>
+
+<!-- ================================================================
+     提示词成分汇总（第二位）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📋</span> 提示词成分汇总（当前轮全量）</div>
+    <div class="section-desc">
+        各成分按轮次求和后的字符数及占比。<strong>工具定义</strong>每轮随请求发送（不进 messages 但计入 input_tokens）。
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-left">成分</th>
+                    <th>字符数</th>
+                    <th>占比</th>
+                </tr>
+            </thead>
+            <tbody>
+                    <tr>
+                        <td class="col-left">系统提示</td>
+                        <td>1,374,883</td>
+                        <td>16.2%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具定义</td>
+                        <td>445,229</td>
+                        <td>5.3%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">用户输入</td>
+                        <td>440,418</td>
+                        <td>5.2%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">思考</td>
+                        <td>215,385</td>
+                        <td>2.5%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">输出文本</td>
+                        <td>16,913</td>
+                        <td>0.2%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具调用</td>
+                        <td>422,033</td>
+                        <td>5.0%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具结果</td>
+                        <td>5,559,912</td>
+                        <td>65.6%</td>
+                    </tr>
+                    <tr style="font-weight:700;background:#f0f0f0;">
+                        <td class="col-left">合计</td>
+                        <td>8,474,773</td>
+                        <td>100%</td>
+                    </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================================================================
+     图表 A：逐轮 Token 用量（堆叠柱状图）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📊</span> 逐轮 Token 用量（堆叠柱状图）</div>
+    <div class="section-desc">
+        每轮一根柱子，堆叠 = 新输入 + 缓存读取 + 缓存写入 + 输出。仅展示有 usage 的有效轮次。
+    </div>
+    <div class="chart-full">
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:1826px"><canvas id="chartTokenBar"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     图表 B：逐轮提示词构成 — 当前轮全量（堆叠柱状图）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📝</span> 逐轮提示词构成 — 当前轮全量（堆叠柱状图）</div>
+    <div class="section-desc">
+        每轮一根柱子，堆叠 = 该轮请求中 7 类提示词成分，Y 轴为请求体大小。柱子骤降 = 上下文被压缩或重置。
+    </div>
+    <div class="chart-full">
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:1826px"><canvas id="chartCumBar"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     对照图：提示词构成（柱状） + Token 用量（折线），上下两个独立图表
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">🔀</span> 逐轮提示词构成 × Token 用量（对照图）</div>
+    <div class="section-desc">
+        上下两个图表 X 轴轮次对齐，各自独立 Y 轴：<strong>上图</strong> = 提示词构成（7 类成分堆叠）；
+        <strong>下图</strong> = Token 用量（<strong>输入</strong>深灰实线 = 新输入 + 缓存读取 + 缓存写入，<strong>输出</strong>品红虚线 = output_tokens）。
+    </div>
+    <div class="chart-full">
+        <h3>🔀 提示词构成 — 当前轮全量（堆叠柱状图）</h3>
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:1826px"><canvas id="chartMixBar"></canvas></div></div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="chart-full">
+        <h3>🔀 Token 用量（折线图）</h3>
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:1826px"><canvas id="chartMixLine"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     工具扫描
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">🔧</span> 工具扫描</div>
+    <div class="section-desc">
+        共注册 <strong>26</strong> 个工具，其中 <strong>8</strong> 个被使用，累计调用 <strong>1389</strong> 次。
+    </div>
+    
+    <div class="chart-full">
+        <h3>🔧 工具调用次数</h3>
+        <div style="height:224px;"><canvas id="chartToolUse"></canvas></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th class="col-left">工具名</th><th>调用次数</th><th>占比</th></tr></thead><tbody><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Bash</td>
+                <td>797</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:57.4%"></span></span>57.4%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">TaskCreate</td>
+                <td>185</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:13.3%"></span></span>13.3%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">TaskUpdate</td>
+                <td>163</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:11.7%"></span></span>11.7%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Read</td>
+                <td>157</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:11.3%"></span></span>11.3%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Agent</td>
+                <td>69</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:5.0%"></span></span>5.0%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Grep</td>
+                <td>12</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:0.9%"></span></span>0.9%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Glob</td>
+                <td>4</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:0.3%"></span></span>0.3%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Write</td>
+                <td>2</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:0.1%"></span></span>0.1%</span></td>
+            </tr><tr style="font-weight:700;background:#f0f0f0;">
+            <td class="col-left">合计</td>
+            <td>1389</td>
+            <td>100%</td>
+        </tr></tbody></table></div><div style="margin-top:16px;">
+            <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">
+                未使用工具（18 个）
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;"><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool when you need to ask the user questions during execution. This allows you to:
+1. Gather user preferences or requirements
+2. Clarify ambiguous instructions
+3. Get decisions on implementat">AskUserQuestion</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Schedule a prompt to be enqueued at a future time. Use for both recurring schedules and one-shot reminders.
+
+Uses standard 5-field cron in the user&#39;s local timezone: minute hour day-of-month month day">CronCreate</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Cancel a cron job previously scheduled with CronCreate. Removes it from .claude/scheduled_tasks.json (durable jobs) or the in-memory session store (session-only jobs).">CronDelete</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="List all cron jobs scheduled via CronCreate, both durable (.claude/scheduled_tasks.json) and session-only.">CronList</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Performs exact string replacements in files.
+
+Usage:
+- You must use your `Read` tool at least once in the conversation before editing. This tool will error if you attempt an edit without reading the f">Edit</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool proactively when you&#39;re about to start a non-trivial implementation task. Getting user sign-off on your approach before writing code prevents wasted effort and ensures alignment. This to">EnterPlanMode</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool ONLY when explicitly instructed to work in a worktree — either by the user directly, or by project instructions (CLAUDE.md / memory). This tool creates an isolated git worktree and switc">EnterWorktree</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool when you are in plan mode and have finished writing your plan to the plan file and are ready for user approval.
+
+## How This Tool Works
+- You should have already written your plan to the">ExitPlanMode</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Exit a worktree session created by EnterWorktree and return the session to the original working directory.
+
+## Scope
+
+This tool ONLY operates on worktrees created by EnterWorktree in this session. It ">ExitWorktree</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Completely replaces the contents of a specific cell in a Jupyter notebook (.ipynb file) with new source. Jupyter notebooks are interactive documents that combine code, text, and visualizations, common">NotebookEdit</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Schedule when to resume work in /loop dynamic mode — the user invoked /loop without an interval, asking you to self-pace iterations of a specific task.
+
+Do NOT schedule a short-interval wakeup to poll">ScheduleWakeup</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Execute a skill within the main conversation
+
+When users ask you to perform tasks, check if any of the available skills match. Skills provide specialized capabilities and domain knowledge.
+
+When users">Skill</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool to retrieve a task by its ID from the task list.
+
+## When to Use This Tool
+
+- When you need the full description and context before starting work on a task
+- To understand task dependenc">TaskGet</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool to list all tasks in the task list.
+
+## When to Use This Tool
+
+- To see what tasks are available to work on (status: &#39;pending&#39;, no owner, not blocked)
+- To check overall progress on the ">TaskList</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="DEPRECATED: Background tasks return their output file path in the tool result, and you receive a &lt;task-notification&gt; with the same path when the task completes.
+- For bash tasks: prefer using the Read">TaskOutput</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="
+- Stops a running background task by its ID
+- Takes a task_id parameter identifying the task to stop
+- Returns a success or failure status
+- Use this tool when you need to terminate a long-running ta">TaskStop</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="IMPORTANT: WebFetch WILL FAIL for authenticated or private URLs. Before using this tool, check if the URL points to an authenticated service (e.g. Google Docs, Confluence, Jira, GitHub). If so, look f">WebFetch</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="
+- Allows Claude to search the web and use the results to inform responses
+- Provides up-to-date information for current events and recent data
+- Returns search result information formatted as search ">WebSearch</span></div></div>
+</div>
+
+</div><!-- .container -->
+
+<div class="footer">
+    由 analyze-round-tokens.js 生成 · 2026-08-20T09:26:46.813Z
+</div>
+
+<!-- ================================================================
+     Chart.js 图表初始化
+     ================================================================ -->
+<script>
+// 通用配置（与 compare-round-tokens.js 保持一致）
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+Chart.defaults.font.size = 12;
+
+// Y 轴刻度回调：格式化大数字
+function bigNumTick(value) {
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+    return value;
+}
+
+// ================================================================
+// 图表 A：逐轮 Token 用量（堆叠柱状图）
+// 堆叠 = 新输入 + 缓存读取 + 缓存写入 + 输出（对应表格"总计"列）
+// ================================================================
+new Chart(document.getElementById('chartTokenBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R56","R58","R60","R64","R67","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R82","R83","R84","R85","R86","R87","R88","R89","R90","R91","R92","R93","R94"],
+        datasets: [{"label":"新输入","data":[25735,342,485,609,245,892,477,2898,764,1224,2423,1675,1180,258,1897,1074,14612,1252,8441,1570,3971,2597,6366,3116,4082,5950,14837,756,784,1219,5105,26362,9729,7421,4353,6162,4608,3819,4857,2457,1055,978,4173,4649,14731,4037,12304,11546,12732,622,10357,1213,1479,37437,36737,39269,18459,41021,36659,3850,8228,4105,264,373,481,921,1235,523,853,996,11402,1266,2423,4896,1068,2346,2649,763,8823,877,966,5698,684],"stack":"token","backgroundColor":"rgba(9, 132, 227, 0.7)","borderColor":"rgba(9, 132, 227, 1)","borderWidth":1},{"label":"缓存读取","data":[0,25600,25600,25600,26112,25600,26112,26112,28672,29184,29696,31744,32768,33792,33792,34816,0,14336,15360,23552,24576,27648,29696,35840,38912,32768,0,14336,14848,15360,16384,20480,46080,55296,62464,66560,72704,76800,79872,83968,86016,87040,87040,36864,0,14336,17920,29696,40960,53248,53248,63488,64512,65536,102400,138240,0,18432,59392,95232,98304,40960,45056,45056,45056,45056,45056,46080,46080,46080,46080,57344,58368,60416,64512,65536,67584,69632,69632,77824,77824,77824,82944],"stack":"token","backgroundColor":"rgba(0, 184, 148, 0.7)","borderColor":"rgba(0, 184, 148, 1)","borderWidth":1},{"label":"缓存写入","data":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"stack":"token","backgroundColor":"rgba(108, 92, 231, 0.7)","borderColor":"rgba(108, 92, 231, 1)","borderWidth":1},{"label":"输出","data":[182,119,103,115,113,81,199,141,178,192,148,512,86,89,100,331,302,418,460,1247,1628,1556,1172,1019,3312,549,201,201,227,524,609,557,758,908,658,915,1068,651,762,577,563,741,2912,467,170,179,145,156,129,125,205,120,84,127,106,4168,370,577,563,258,4109,239,93,92,425,285,297,315,114,118,148,195,187,256,194,261,146,119,230,73,4681,90,439],"stack":"token","backgroundColor":"rgba(253, 203, 110, 0.7)","borderColor":"rgba(253, 203, 110, 1)","borderWidth":1}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: 'Token 数' },
+                ticks: { callback: bigNumTick },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' Token' }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 B：逐轮提示词构成 — 当前轮全量（堆叠柱状图）
+// Y 轴 = 请求体大小
+// ================================================================
+new Chart(document.getElementById('chartCumBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R56","R58","R60","R64","R67","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R82","R83","R84","R85","R86","R87","R88","R89","R90","R91","R92","R93","R94"],
+        datasets: [{"label":"系统提示","data":[28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953],"stack":"cum","backgroundColor":"rgba(108, 92, 231, 0.8)"},{"label":"工具定义","data":[6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118],"stack":"cum","backgroundColor":"rgba(0, 206, 201, 0.8)"},{"label":"用户输入","data":[4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4335,4335,4335,4335,4335,4335,4335,4335,4335,4405,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4405,4630,4630,4630,4630,4630,4630,4630,4630,4630,4630,4630,10608,16141,16141,16141,16141,16141,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405],"stack":"cum","backgroundColor":"rgba(9, 132, 227, 0.8)"},{"label":"思考","data":[0,323,385,419,443,491,557,628,700,933,1077,1183,2597,2698,2804,2980,0,162,440,998,1067,1201,1277,1687,2174,3106,0,165,222,309,515,698,967,1649,3149,3525,4578,5866,6231,6445,6915,7084,7459,3220,0,294,460,512,560,717,805,949,1106,1160,1381,1520,0,183,399,668,795,3436,4063,4178,4297,4438,4518,4611,4639,4766,4881,4978,5101,5180,5303,5430,5506,5851,5985,6710,6763,6881,7034],"stack":"cum","backgroundColor":"rgba(253, 203, 110, 0.8)"},{"label":"输出文本","data":[0,32,32,32,32,32,32,32,32,32,32,32,71,71,71,71,0,74,134,196,247,287,287,362,444,98,0,87,87,87,158,216,267,399,454,539,590,625,676,709,740,740,740,126,0,23,46,46,46,46,46,46,46,46,46,46,0,0,169,277,331,168,226,226,226,226,226,226,226,226,251,251,274,274,274,274,274,300,300,300,300,300,300],"stack":"cum","backgroundColor":"rgba(0, 184, 148, 0.8)"},{"label":"工具调用","data":[0,88,204,288,425,520,557,865,1075,1248,1489,1707,1742,1779,1854,1932,0,436,970,1855,5603,10302,15128,18518,21539,2451,0,256,590,964,1810,2984,4050,5262,6346,7504,8674,10124,11234,12838,13720,14856,16294,3530,0,119,339,559,791,922,1065,1332,1434,1540,1636,1744,0,502,1235,1932,2217,4360,4395,4432,4469,5467,6101,6752,7476,7580,7663,7905,8205,8532,9027,9348,9927,9962,10058,10093,10130,19569,19604],"stack":"cum","backgroundColor":"rgba(225, 112, 85, 0.8)"},{"label":"工具结果","data":[0,40,81,117,187,225,247,5883,6686,8647,12809,15997,16019,16041,18518,18720,0,1142,22650,24142,31819,32064,42481,50336,57504,23809,0,92,793,2256,12913,70674,95586,111403,117726,131843,141469,146920,156116,158490,158602,159633,166553,28734,0,8049,27539,45828,66093,66286,90302,92584,95735,189033,282045,371688,0,102314,177010,182596,200738,35373,35395,35417,35439,35450,35510,35521,35532,35592,64046,66847,71457,80415,80418,84552,88262,88284,110423,110445,110467,110619,110641],"stack":"cum","backgroundColor":"rgba(214, 48, 49, 0.8)"}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: '请求体大小', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 D-1：对照图上半部分 — 提示词构成柱状（单 Y 轴，字符数）
+// ================================================================
+new Chart(document.getElementById('chartMixBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R56","R58","R60","R64","R67","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R82","R83","R84","R85","R86","R87","R88","R89","R90","R91","R92","R93","R94"],
+        datasets: [{"label":"系统提示","data":[28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,5041,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953,28953],"stack":"cum","backgroundColor":"rgba(108, 92, 231, 0.8)"},{"label":"工具定义","data":[6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,4663,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118,6118],"stack":"cum","backgroundColor":"rgba(0, 206, 201, 0.8)"},{"label":"用户输入","data":[4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4335,4335,4335,4335,4335,4335,4335,4335,4335,4405,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4880,4405,4630,4630,4630,4630,4630,4630,4630,4630,4630,4630,4630,10608,16141,16141,16141,16141,16141,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405,4405],"stack":"cum","backgroundColor":"rgba(9, 132, 227, 0.8)"},{"label":"思考","data":[0,323,385,419,443,491,557,628,700,933,1077,1183,2597,2698,2804,2980,0,162,440,998,1067,1201,1277,1687,2174,3106,0,165,222,309,515,698,967,1649,3149,3525,4578,5866,6231,6445,6915,7084,7459,3220,0,294,460,512,560,717,805,949,1106,1160,1381,1520,0,183,399,668,795,3436,4063,4178,4297,4438,4518,4611,4639,4766,4881,4978,5101,5180,5303,5430,5506,5851,5985,6710,6763,6881,7034],"stack":"cum","backgroundColor":"rgba(253, 203, 110, 0.8)"},{"label":"输出文本","data":[0,32,32,32,32,32,32,32,32,32,32,32,71,71,71,71,0,74,134,196,247,287,287,362,444,98,0,87,87,87,158,216,267,399,454,539,590,625,676,709,740,740,740,126,0,23,46,46,46,46,46,46,46,46,46,46,0,0,169,277,331,168,226,226,226,226,226,226,226,226,251,251,274,274,274,274,274,300,300,300,300,300,300],"stack":"cum","backgroundColor":"rgba(0, 184, 148, 0.8)"},{"label":"工具调用","data":[0,88,204,288,425,520,557,865,1075,1248,1489,1707,1742,1779,1854,1932,0,436,970,1855,5603,10302,15128,18518,21539,2451,0,256,590,964,1810,2984,4050,5262,6346,7504,8674,10124,11234,12838,13720,14856,16294,3530,0,119,339,559,791,922,1065,1332,1434,1540,1636,1744,0,502,1235,1932,2217,4360,4395,4432,4469,5467,6101,6752,7476,7580,7663,7905,8205,8532,9027,9348,9927,9962,10058,10093,10130,19569,19604],"stack":"cum","backgroundColor":"rgba(225, 112, 85, 0.8)"},{"label":"工具结果","data":[0,40,81,117,187,225,247,5883,6686,8647,12809,15997,16019,16041,18518,18720,0,1142,22650,24142,31819,32064,42481,50336,57504,23809,0,92,793,2256,12913,70674,95586,111403,117726,131843,141469,146920,156116,158490,158602,159633,166553,28734,0,8049,27539,45828,66093,66286,90302,92584,95735,189033,282045,371688,0,102314,177010,182596,200738,35373,35395,35417,35439,35450,35510,35521,35532,35592,64046,66847,71457,80415,80418,84552,88262,88284,110423,110445,110467,110619,110641],"stack":"cum","backgroundColor":"rgba(214, 48, 49, 0.8)"}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: '字符数', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' 字符' }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 D-2：对照图下半部分 — Token 用量折线（单 Y 轴，Token 数）
+// ================================================================
+new Chart(document.getElementById('chartMixLine'), {
+    type: 'line',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33","R34","R35","R36","R37","R38","R39","R40","R41","R42","R43","R44","R45","R46","R47","R48","R49","R50","R51","R52","R53","R54","R56","R58","R60","R64","R67","R69","R70","R71","R72","R73","R74","R75","R76","R77","R78","R79","R80","R82","R83","R84","R85","R86","R87","R88","R89","R90","R91","R92","R93","R94"],
+        datasets: [{"label":"输入","data":[25735,25942,26085,26209,26357,26492,26589,29010,29436,30408,32119,33419,33948,34050,35689,35890,14612,15588,23801,25122,28547,30245,36062,38956,42994,38718,14837,15092,15632,16579,21489,46842,55809,62717,66817,72722,77312,80619,84729,86425,87071,88018,91213,41513,14731,18373,30224,41242,53692,53870,63605,64701,65991,102973,139137,177509,18459,59453,96051,99082,106532,45065,45320,45429,45537,45977,46291,46603,46933,47076,57482,58610,60791,65312,65580,67882,70233,70395,78455,78701,78790,83522,83628],"borderColor":"#1e293b","backgroundColor":"#1e293b","borderWidth":2.5,"pointRadius":4,"pointHoverRadius":6,"pointBackgroundColor":"#1e293b","pointBorderColor":"#fff","pointBorderWidth":2,"tension":0.3,"fill":false,"spanGaps":false},{"label":"输出","data":[182,119,103,115,113,81,199,141,178,192,148,512,86,89,100,331,302,418,460,1247,1628,1556,1172,1019,3312,549,201,201,227,524,609,557,758,908,658,915,1068,651,762,577,563,741,2912,467,170,179,145,156,129,125,205,120,84,127,106,4168,370,577,563,258,4109,239,93,92,425,285,297,315,114,118,148,195,187,256,194,261,146,119,230,73,4681,90,439],"borderColor":"#e84393","backgroundColor":"#e84393","borderWidth":2,"borderDash":[6,3],"pointRadius":3.5,"pointHoverRadius":5,"pointBackgroundColor":"#e84393","pointBorderColor":"#fff","pointBorderWidth":2,"tension":0.3,"fill":false,"spanGaps":false}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { grid: { display: false } },
+            y: {
+                title: { display: true, text: 'Token 数', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: {
+                    label: function(ctx) {
+                        var v = ctx.parsed && ctx.parsed.y;
+                        return ctx.dataset.label + ': ' + (v == null ? '无数据' : v.toLocaleString() + ' Token');
+                    }
+                }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 工具扫描：工具调用次数（水平柱状图）
+// ================================================================
+
+new Chart(document.getElementById('chartToolUse'), {
+    type: 'bar',
+    data: {
+        labels: ["Bash","TaskCreate","TaskUpdate","Read","Agent","Grep","Glob","Write"],
+        datasets: [{
+            label: '调用次数',
+            data: [797,185,163,157,69,12,4,2],
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0 } },
+            y: { grid: { display: false } }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: { label: ctx => '调用 ' + ctx.parsed.x + ' 次' }
+            },
+            legend: { display: false }
+        }
+    }
+});
+
+</script>
+
+</body>
+</html>

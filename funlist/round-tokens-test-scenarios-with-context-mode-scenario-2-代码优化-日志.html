@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逐轮分析报告 — 日志</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ================================================================
+   基础样式
+   ================================================================ */
+:root {
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --accent: #3b82f6;
+    --accent-light: #eff6ff;
+    --accent-dark: #2563eb;
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --yellow: #f59e0b;
+    --yellow-bg: #fffbeb;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --purple: #8b5cf6;
+    --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --header-text: #ffffff;
+    --table-stripe: #f8fafc;
+    --table-header-bg: linear-gradient(135deg, #475569 0%, #334155 100%);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05);
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding-bottom: 40px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ================================================================
+   头部
+   ================================================================ */
+.header {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 28px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(59,130,246,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(139,92,246,0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+.header > * { position: relative; z-index: 1; }
+.header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+.header .meta {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+/* ================================================================
+   容器
+   ================================================================ */
+.container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 28px;
+}
+
+/* ================================================================
+   汇总卡片
+   ================================================================ */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    transition: var(--transition);
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0;
+    transition: var(--transition);
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border);
+}
+.card:hover::before { opacity: 1; }
+.card .label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.card .value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+.card .value.green { color: var(--green); }
+.card .value.yellow { color: var(--yellow); }
+.card .value.red { color: var(--red); }
+.card .sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+/* 缓存命中率大卡片 */
+.card-highlight {
+    grid-column: span 2;
+    background: var(--accent-gradient);
+    color: #fff;
+    border: none;
+}
+.card-highlight::before { background: rgba(255,255,255,0.3); opacity: 1; }
+.card-highlight .label { color: rgba(255,255,255,0.8); }
+.card-highlight .value { color: #fff; font-size: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.card-highlight .sub { color: rgba(255,255,255,0.75); }
+.card-highlight:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* ================================================================
+   章节标题
+   ================================================================ */
+.section {
+    margin-bottom: 36px;
+}
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    color: var(--text);
+}
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: var(--accent-gradient);
+    border-radius: 1px;
+}
+.section-title .icon {
+    font-size: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+.section-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    background: var(--accent-light);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--accent);
+    line-height: 1.7;
+}
+
+/* ================================================================
+   表格包装器（横向滚动）
+   ================================================================ */
+.table-wrap {
+    overflow-x: auto;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 22px;
+    border: 1px solid var(--border-light);
+}
+
+/* ================================================================
+   图表卡片
+   ================================================================ */
+.chart-full {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    transition: var(--transition);
+}
+.chart-full:hover {
+    box-shadow: var(--shadow);
+}
+.chart-full h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+.chart-full .chart-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    line-height: 1.6;
+}
+.chart-full canvas {
+    width: 100% !important;
+}
+/* 逐轮柱状图滚动容器 */
+.chart-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: var(--radius-sm);
+}
+.chart-scroll-inner {
+    height: 280px;
+}
+
+/* ================================================================
+   表格样式
+   ================================================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    white-space: nowrap;
+}
+thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+thead th {
+    background: var(--table-header-bg);
+    color: #fff;
+    padding: 11px 14px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+thead th:first-child { text-align: center; }
+thead th.col-left { text-align: left; }
+
+tbody td {
+    padding: 9px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s ease;
+}
+tbody td:first-child {
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(241,245,249,0.5);
+}
+tbody td.col-left { text-align: left; }
+
+/* 斑马条纹 */
+tbody tr:nth-child(even) { background: var(--table-stripe); }
+tbody tr:hover { background: var(--accent-light) !important; }
+tbody tr:hover td:first-child { background: rgba(59,130,246,0.1); color: var(--accent-dark); }
+
+/* 错误行灰色 */
+tr.row-error { opacity: 0.45; background: #f8fafc !important; }
+tr.row-error td { color: var(--text-muted); }
+tr.row-error td:first-child { color: var(--text-muted); background: transparent; }
+
+/* 缓存命中率颜色 */
+.rate-high { color: var(--green); font-weight: 700; }
+.rate-mid { color: var(--yellow); font-weight: 700; }
+.rate-low { color: var(--red); font-weight: 700; }
+
+/* 占比进度条 */
+.pct-bar-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.pct-bar {
+    width: 44px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+}
+.pct-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+.pct-bar-fill.sys { background: #8b5cf6; }
+.pct-bar-fill.tools { background: #00cec9; }
+.pct-bar-fill.user { background: var(--accent); }
+.pct-bar-fill.think { background: var(--yellow); }
+.pct-bar-fill.assist { background: var(--green); }
+.pct-bar-fill.tool { background: #f97316; }
+.pct-bar-fill.result { background: var(--red); }
+
+/* ================================================================
+   可折叠区域
+   ================================================================ */
+.collapse-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+.collapse-toggle:hover { background: var(--border-light); }
+.collapse-toggle::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 12px;
+    width: 16px;
+    color: var(--text-secondary);
+}
+.collapse-toggle.open::before {
+    transform: rotate(90deg);
+}
+.collapse-content {
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-content.collapsed {
+    max-height: 0 !important;
+}
+
+/* ================================================================
+   页脚
+   ================================================================ */
+.footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+}
+
+/* ================================================================
+   响应式
+   ================================================================ */
+@media (max-width: 768px) {
+    .container { padding: 14px 16px; }
+    .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card-highlight { grid-column: span 2; }
+    .header { padding: 20px 24px; }
+    .header h1 { font-size: 17px; }
+    .card { padding: 16px 14px; }
+    .card .value { font-size: 24px; }
+    .card-highlight .value { font-size: 32px; }
+    table { font-size: 11px; }
+    thead th, tbody td { padding: 7px 10px; }
+    .chart-full { padding: 16px; }
+    .chart-scroll-inner { height: 240px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     头部
+     ================================================================ -->
+<div class="header">
+    <div>
+        <h1>逐轮分析报告：Token 组成/用量 + 提示词组成/用量</h1>
+        <div class="meta">日志</div>
+    </div>
+    <div class="meta">生成时间：2026/8/20 17:26:45</div>
+</div>
+
+<div class="container">
+
+<!-- ================================================================
+     汇总卡片
+     ================================================================ -->
+<div class="summary-cards">
+    <div class="card">
+        <div class="label">有效轮次</div>
+        <div class="value">31</div>
+        <div class="sub">共 33 轮，2 轮无效</div>
+    </div>
+    <div class="card card-highlight">
+        <div class="label">缓存命中率</div>
+        <div class="value">96.6%</div>
+        <div class="sub">缓存读取 2,803,456 / 总输入 2,903,591</div>
+    </div>
+    <div class="card">
+        <div class="label">总 Token</div>
+        <div class="value">2,965,866</div>
+        <div class="sub">输入 100,135 + 输出 62,275</div>
+    </div>
+    <div class="card">
+        <div class="label">总耗时</div>
+        <div class="value">13.3分钟</div>
+        <div class="sub">平均 25.7秒/轮</div>
+    </div>
+</div>
+
+<!-- ================================================================
+     提示词成分汇总（第二位）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📋</span> 提示词成分汇总（当前轮全量）</div>
+    <div class="section-desc">
+        各成分按轮次求和后的字符数及占比。<strong>工具定义</strong>每轮随请求发送（不进 messages 但计入 input_tokens）。
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-left">成分</th>
+                    <th>字符数</th>
+                    <th>占比</th>
+                </tr>
+            </thead>
+            <tbody>
+                    <tr>
+                        <td class="col-left">系统提示</td>
+                        <td>897,450</td>
+                        <td>11.7%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具定义</td>
+                        <td>383,018</td>
+                        <td>5.0%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">用户输入</td>
+                        <td>541,042</td>
+                        <td>7.0%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">思考</td>
+                        <td>2,407,235</td>
+                        <td>31.3%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">输出文本</td>
+                        <td>3,171</td>
+                        <td>0.0%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具调用</td>
+                        <td>1,158,282</td>
+                        <td>15.1%</td>
+                    </tr>
+                    <tr>
+                        <td class="col-left">工具结果</td>
+                        <td>2,289,132</td>
+                        <td>29.8%</td>
+                    </tr>
+                    <tr style="font-weight:700;background:#f0f0f0;">
+                        <td class="col-left">合计</td>
+                        <td>7,679,330</td>
+                        <td>100%</td>
+                    </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================================================================
+     图表 A：逐轮 Token 用量（堆叠柱状图）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📊</span> 逐轮 Token 用量（堆叠柱状图）</div>
+    <div class="section-desc">
+        每轮一根柱子，堆叠 = 新输入 + 缓存读取 + 缓存写入 + 输出。仅展示有 usage 的有效轮次。
+    </div>
+    <div class="chart-full">
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:682px"><canvas id="chartTokenBar"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     图表 B：逐轮提示词构成 — 当前轮全量（堆叠柱状图）
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">📝</span> 逐轮提示词构成 — 当前轮全量（堆叠柱状图）</div>
+    <div class="section-desc">
+        每轮一根柱子，堆叠 = 该轮请求中 7 类提示词成分，Y 轴为请求体大小。柱子骤降 = 上下文被压缩或重置。
+    </div>
+    <div class="chart-full">
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:682px"><canvas id="chartCumBar"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     对照图：提示词构成（柱状） + Token 用量（折线），上下两个独立图表
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">🔀</span> 逐轮提示词构成 × Token 用量（对照图）</div>
+    <div class="section-desc">
+        上下两个图表 X 轴轮次对齐，各自独立 Y 轴：<strong>上图</strong> = 提示词构成（7 类成分堆叠）；
+        <strong>下图</strong> = Token 用量（<strong>输入</strong>深灰实线 = 新输入 + 缓存读取 + 缓存写入，<strong>输出</strong>品红虚线 = output_tokens）。
+    </div>
+    <div class="chart-full">
+        <h3>🔀 提示词构成 — 当前轮全量（堆叠柱状图）</h3>
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:682px"><canvas id="chartMixBar"></canvas></div></div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="chart-full">
+        <h3>🔀 Token 用量（折线图）</h3>
+        <div class="chart-scroll"><div class="chart-scroll-inner" style="min-width:682px"><canvas id="chartMixLine"></canvas></div></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     工具扫描
+     ================================================================ -->
+<div class="section">
+    <div class="section-title"><span class="icon">🔧</span> 工具扫描</div>
+    <div class="section-desc">
+        共注册 <strong>27</strong> 个工具，其中 <strong>7</strong> 个被使用，累计调用 <strong>606</strong> 次。
+    </div>
+    
+    <div class="chart-full">
+        <h3>🔧 工具调用次数</h3>
+        <div style="height:200px;"><canvas id="chartToolUse"></canvas></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th class="col-left">工具名</th><th>调用次数</th><th>占比</th></tr></thead><tbody><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Write</td>
+                <td>161</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:26.6%"></span></span>26.6%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Bash</td>
+                <td>148</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:24.4%"></span></span>24.4%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">TaskUpdate</td>
+                <td>123</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:20.3%"></span></span>20.3%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">TaskCreate</td>
+                <td>115</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:19.0%"></span></span>19.0%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">mcp__plugin_context-mode_context-mode__ctx_execute_file</td>
+                <td>26</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:4.3%"></span></span>4.3%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Read</td>
+                <td>25</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:4.1%"></span></span>4.1%</span></td>
+            </tr><tr>
+                <td class="col-left" style="font-family:monospace;font-size:12px;">Edit</td>
+                <td>8</td>
+                <td><span class="pct-bar-wrap"><span class="pct-bar"><span class="pct-bar-fill sys" style="width:1.3%"></span></span>1.3%</span></td>
+            </tr><tr style="font-weight:700;background:#f0f0f0;">
+            <td class="col-left">合计</td>
+            <td>606</td>
+            <td>100%</td>
+        </tr></tbody></table></div><div style="margin-top:16px;">
+            <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">
+                未使用工具（21 个）
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;"><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Launch a new agent to handle complex, multi-step tasks. Each agent type has specific capabilities and tools available to it.
+
+Available agent types and the tools they have access to:
+- claude: Catch-a">Agent</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool when you need to ask the user questions during execution. This allows you to:
+1. Gather user preferences or requirements
+2. Clarify ambiguous instructions
+3. Get decisions on implementat">AskUserQuestion</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Schedule a prompt to be enqueued at a future time. Use for both recurring schedules and one-shot reminders.
+
+Uses standard 5-field cron in the user&#39;s local timezone: minute hour day-of-month month day">CronCreate</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Cancel a cron job previously scheduled with CronCreate. Removes it from .claude/scheduled_tasks.json (durable jobs) or the in-memory session store (session-only jobs).">CronDelete</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="List all cron jobs scheduled via CronCreate, both durable (.claude/scheduled_tasks.json) and session-only.">CronList</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool proactively when you&#39;re about to start a non-trivial implementation task. Getting user sign-off on your approach before writing code prevents wasted effort and ensures alignment. This to">EnterPlanMode</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool ONLY when explicitly instructed to work in a worktree — either by the user directly, or by project instructions (CLAUDE.md / memory). This tool creates an isolated git worktree and switc">EnterWorktree</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool when you are in plan mode and have finished writing your plan to the plan file and are ready for user approval.
+
+## How This Tool Works
+- You should have already written your plan to the">ExitPlanMode</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Exit a worktree session created by EnterWorktree and return the session to the original working directory.
+
+## Scope
+
+This tool ONLY operates on worktrees created by EnterWorktree in this session. It ">ExitWorktree</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="- Fast file pattern matching tool that works with any codebase size
+- Supports glob patterns like &quot;**/*.js&quot; or &quot;src/**/*.ts&quot;
+- Returns matching file paths sorted by modification time
+- Use this tool w">Glob</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="A powerful search tool built on ripgrep
+
+  Usage:
+  - ALWAYS use Grep for search tasks. NEVER invoke `grep` or `rg` as a Bash command. The Grep tool has been optimized for correct permissions and acce">Grep</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Completely replaces the contents of a specific cell in a Jupyter notebook (.ipynb file) with new source. Jupyter notebooks are interactive documents that combine code, text, and visualizations, common">NotebookEdit</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Schedule when to resume work in /loop dynamic mode — the user invoked /loop without an interval, asking you to self-pace iterations of a specific task.
+
+Do NOT schedule a short-interval wakeup to poll">ScheduleWakeup</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Execute a skill within the main conversation
+
+When users ask you to perform tasks, check if any of the available skills match. Skills provide specialized capabilities and domain knowledge.
+
+When users">Skill</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool to retrieve a task by its ID from the task list.
+
+## When to Use This Tool
+
+- When you need the full description and context before starting work on a task
+- To understand task dependenc">TaskGet</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Use this tool to list all tasks in the task list.
+
+## When to Use This Tool
+
+- To see what tasks are available to work on (status: &#39;pending&#39;, no owner, not blocked)
+- To check overall progress on the ">TaskList</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="DEPRECATED: Background tasks return their output file path in the tool result, and you receive a &lt;task-notification&gt; with the same path when the task completes.
+- For bash tasks: prefer using the Read">TaskOutput</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="
+- Stops a running background task by its ID
+- Takes a task_id parameter identifying the task to stop
+- Returns a success or failure status
+- Use this tool when you need to terminate a long-running ta">TaskStop</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="Wait for MCP servers that are still connecting and whose tools are not
+yet in your tool list. Pass `servers` to wait for specific ones, or omit
+it to wait for all pending servers.
+
+If the user&#39;s reque">WaitForMcpServers</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="IMPORTANT: WebFetch WILL FAIL for authenticated or private URLs. Before using this tool, check if the URL points to an authenticated service (e.g. Google Docs, Confluence, Jira, GitHub). If so, look f">WebFetch</span><span style="display:inline-block;padding:3px 10px;font-size:12px;font-family:monospace;
+                background:#f1f5f9;color:#94a3b8;border-radius:12px;border:1px solid #e2e8f0;"
+                title="
+- Allows Claude to search the web and use the results to inform responses
+- Provides up-to-date information for current events and recent data
+- Returns search result information formatted as search ">WebSearch</span></div></div>
+</div>
+
+</div><!-- .container -->
+
+<div class="footer">
+    由 analyze-round-tokens.js 生成 · 2026-08-20T09:26:45.154Z
+</div>
+
+<!-- ================================================================
+     Chart.js 图表初始化
+     ================================================================ -->
+<script>
+// 通用配置（与 compare-round-tokens.js 保持一致）
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+Chart.defaults.font.size = 12;
+
+// Y 轴刻度回调：格式化大数字
+function bigNumTick(value) {
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+    return value;
+}
+
+// ================================================================
+// 图表 A：逐轮 Token 用量（堆叠柱状图）
+// 堆叠 = 新输入 + 缓存读取 + 缓存写入 + 输出（对应表格"总计"列）
+// ================================================================
+new Chart(document.getElementById('chartTokenBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33"],
+        datasets: [{"label":"新输入","data":[26186,32037,210,168,433,297,23907,145,236,189,333,218,2273,3530,70,172,185,2513,133,168,81,101,242,189,1242,112,253,1767,182,258,2305],"stack":"token","backgroundColor":"rgba(9, 132, 227, 0.7)","borderColor":"rgba(9, 132, 227, 1)","borderWidth":1},{"label":"缓存读取","data":[2560,10368,42496,42752,42880,44160,44800,88064,88448,88576,88704,88960,89088,91264,97664,100864,100992,101120,108288,109568,111488,113408,113408,118656,118784,124928,124928,125056,126720,127104,127360],"stack":"token","backgroundColor":"rgba(0, 184, 148, 0.7)","borderColor":"rgba(0, 184, 148, 1)","borderWidth":1},{"label":"缓存写入","data":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"stack":"token","backgroundColor":"rgba(108, 92, 231, 0.7)","borderColor":"rgba(108, 92, 231, 1)","borderWidth":1},{"label":"输出","data":[267,126,161,162,948,378,19392,364,63,220,110,2128,3379,2886,3249,110,2404,4736,1261,1781,1888,110,5095,1109,4964,110,1592,61,237,2233,751],"stack":"token","backgroundColor":"rgba(253, 203, 110, 0.7)","borderColor":"rgba(253, 203, 110, 1)","borderWidth":1}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: 'Token 数' },
+                ticks: { callback: bigNumTick },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' Token' }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 B：逐轮提示词构成 — 当前轮全量（堆叠柱状图）
+// Y 轴 = 请求体大小
+// ================================================================
+new Chart(document.getElementById('chartCumBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33"],
+        datasets: [{"label":"系统提示","data":[28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950],"stack":"cum","backgroundColor":"rgba(108, 92, 231, 0.8)"},{"label":"工具定义","data":[6368,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555],"stack":"cum","backgroundColor":"rgba(0, 206, 201, 0.8)"},{"label":"用户输入","data":[15947,16704,16704,16704,16704,16704,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663],"stack":"cum","backgroundColor":"rgba(9, 132, 227, 0.8)"},{"label":"思考","data":[0,657,710,860,860,2011,3106,76157,76219,76219,76219,76219,76219,76850,79222,83084,83084,88969,95812,97740,101760,104842,104842,121755,124886,128382,128382,128382,128382,128929,136476],"stack":"cum","backgroundColor":"rgba(253, 203, 110, 0.8)"},{"label":"输出文本","data":[0,12,12,12,12,40,59,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,146,146,146,146,146,146,146,210],"stack":"cum","backgroundColor":"rgba(0, 184, 148, 0.8)"},{"label":"工具调用","data":[0,115,283,458,771,2622,2752,2924,3417,3454,4023,4095,12331,24258,33274,41742,41814,44914,55008,57597,60324,64403,64475,64976,65322,81116,81188,84961,84996,85199,85470],"stack":"cum","backgroundColor":"rgba(225, 112, 85, 0.8)"},{"label":"工具结果","data":[0,31,485,599,1065,1698,89442,89909,90129,90151,90301,90345,90508,90668,90833,90988,91032,91190,91347,91504,91665,91823,91867,92135,92302,92444,92488,92629,92651,93368,93535],"stack":"cum","backgroundColor":"rgba(214, 48, 49, 0.8)"}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: '请求体大小', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 D-1：对照图上半部分 — 提示词构成柱状（单 Y 轴，字符数）
+// ================================================================
+new Chart(document.getElementById('chartMixBar'), {
+    type: 'bar',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33"],
+        datasets: [{"label":"系统提示","data":[28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950,28950],"stack":"cum","backgroundColor":"rgba(108, 92, 231, 0.8)"},{"label":"工具定义","data":[6368,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555,12555],"stack":"cum","backgroundColor":"rgba(0, 206, 201, 0.8)"},{"label":"用户输入","data":[15947,16704,16704,16704,16704,16704,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663,17663],"stack":"cum","backgroundColor":"rgba(9, 132, 227, 0.8)"},{"label":"思考","data":[0,657,710,860,860,2011,3106,76157,76219,76219,76219,76219,76219,76850,79222,83084,83084,88969,95812,97740,101760,104842,104842,121755,124886,128382,128382,128382,128382,128929,136476],"stack":"cum","backgroundColor":"rgba(253, 203, 110, 0.8)"},{"label":"输出文本","data":[0,12,12,12,12,40,59,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,146,146,146,146,146,146,146,210],"stack":"cum","backgroundColor":"rgba(0, 184, 148, 0.8)"},{"label":"工具调用","data":[0,115,283,458,771,2622,2752,2924,3417,3454,4023,4095,12331,24258,33274,41742,41814,44914,55008,57597,60324,64403,64475,64976,65322,81116,81188,84961,84996,85199,85470],"stack":"cum","backgroundColor":"rgba(225, 112, 85, 0.8)"},{"label":"工具结果","data":[0,31,485,599,1065,1698,89442,89909,90129,90151,90301,90345,90508,90668,90833,90988,91032,91190,91347,91504,91665,91823,91867,92135,92302,92444,92488,92629,92651,93368,93535],"stack":"cum","backgroundColor":"rgba(214, 48, 49, 0.8)"}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+                stacked: true,
+                title: { display: true, text: '字符数', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' 字符' }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 图表 D-2：对照图下半部分 — Token 用量折线（单 Y 轴，Token 数）
+// ================================================================
+new Chart(document.getElementById('chartMixLine'), {
+    type: 'line',
+    data: {
+        labels: ["R2","R3","R4","R5","R6","R7","R9","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19","R20","R21","R22","R23","R24","R25","R26","R27","R28","R29","R30","R31","R32","R33"],
+        datasets: [{"label":"输入","data":[28746,42405,42706,42920,43313,44457,68707,88209,88684,88765,89037,89178,91361,94794,97734,101036,101177,103633,108421,109736,111569,113509,113650,118845,120026,125040,125181,126823,126902,127362,129665],"borderColor":"#1e293b","backgroundColor":"#1e293b","borderWidth":2.5,"pointRadius":4,"pointHoverRadius":6,"pointBackgroundColor":"#1e293b","pointBorderColor":"#fff","pointBorderWidth":2,"tension":0.3,"fill":false,"spanGaps":false},{"label":"输出","data":[267,126,161,162,948,378,19392,364,63,220,110,2128,3379,2886,3249,110,2404,4736,1261,1781,1888,110,5095,1109,4964,110,1592,61,237,2233,751],"borderColor":"#e84393","backgroundColor":"#e84393","borderWidth":2,"borderDash":[6,3],"pointRadius":3.5,"pointHoverRadius":5,"pointBackgroundColor":"#e84393","pointBorderColor":"#fff","pointBorderWidth":2,"tension":0.3,"fill":false,"spanGaps":false}],
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { grid: { display: false } },
+            y: {
+                title: { display: true, text: 'Token 数', font: { weight: '600' } },
+                ticks: { callback: bigNumTick, beginAtZero: true },
+            }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                bodyFont: { size: 12 },
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                boxPadding: 4,
+                callbacks: {
+                    label: function(ctx) {
+                        var v = ctx.parsed && ctx.parsed.y;
+                        return ctx.dataset.label + ': ' + (v == null ? '无数据' : v.toLocaleString() + ' Token');
+                    }
+                }
+            },
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
+        }
+    }
+});
+
+// ================================================================
+// 工具扫描：工具调用次数（水平柱状图）
+// ================================================================
+
+new Chart(document.getElementById('chartToolUse'), {
+    type: 'bar',
+    data: {
+        labels: ["Write","Bash","TaskUpdate","TaskCreate","mcp__plugin_context-mode_context-mode__ctx_execute_file","Read","Edit"],
+        datasets: [{
+            label: '调用次数',
+            data: [161,148,123,115,26,25,8],
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0 } },
+            y: { grid: { display: false } }
+        },
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleFont: { weight: '600' },
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: { label: ctx => '调用 ' + ctx.parsed.x + ' 次' }
+            },
+            legend: { display: false }
+        }
+    }
+});
+
+</script>
+
+</body>
+</html>

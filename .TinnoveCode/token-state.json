@@ -1,9 +1,51 @@
 {
-  "8bc9f2c7-4447-4cf6-b75f-92c634e8b955": {
-    "input": 129688,
-    "output": 4869,
+  "e2c11873-f411-45fc-a9b6-4e679f71f6df": {
+    "input": 93748,
+    "output": 10417,
     "reasoning": 0,
-    "cacheRead": 531072,
+    "cacheRead": 400384,
+    "cacheWrite": 0
+  },
+  "f0fa55fa-9a37-4013-95c7-ddda9d056097": {
+    "input": 51597,
+    "output": 1265,
+    "reasoning": 0,
+    "cacheRead": 78848,
+    "cacheWrite": 0
+  },
+  "109c7672-8833-4993-963c-30fcce6a28e0": {
+    "input": 14859,
+    "output": 3285,
+    "reasoning": 0,
+    "cacheRead": 692224,
+    "cacheWrite": 0
+  },
+  "8343eec5-74ac-4175-8cd7-21264a759cad": {
+    "input": 4264,
+    "output": 508,
+    "reasoning": 0,
+    "cacheRead": 182272,
+    "cacheWrite": 0
+  },
+  "486b4501-0d42-49bc-adcf-d54fd36e9129": {
+    "input": 32270,
+    "output": 7666,
+    "reasoning": 0,
+    "cacheRead": 1304704,
+    "cacheWrite": 0
+  },
+  "3e60fce2-b4dc-4311-aa8a-807ca8dcae13": {
+    "input": 47903,
+    "output": 8639,
+    "reasoning": 0,
+    "cacheRead": 667520,
+    "cacheWrite": 0
+  },
+  "3583b6fe-d69d-48be-a556-646903b12cf2": {
+    "input": 33466,
+    "output": 12370,
+    "reasoning": 0,
+    "cacheRead": 1750400,
     "cacheWrite": 0
   }
 }
