@@ -413,6 +413,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
   <a href="#section-s5" class="nav-link" data-target="section-s5"><span class="nav-icon">5</span>项目逆向</a>
   <div class="sidebar-section-label">综合洞察</div>
   <a href="#section-summary" class="nav-link" data-target="section-summary"><span class="nav-icon">★</span>对比分析汇总</a>
+  <div class="sidebar-section-label">源码机制</div>
+  <a href="#section-s4-deep" class="nav-link" data-target="section-s4-deep"><span class="nav-icon">◇</span>S4 源码机制分析</a>
   <div class="sidebar-footer">生成于 2026-08-21 · context-mode</div>
 </nav>
 
@@ -2190,5 +2192,204 @@ window.addEventListener('resize', function() {
   btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+
+<hr style="border:0;border-top:2px solid #F4732F;margin:32px 0;opacity:0.6;">
+<div class="container scenario-section" id="section-s4-deep" style="max-width:1240px;margin:0 auto;">
+  <h1 style="text-align:center;font-size:26px;font-weight:800;color:#1a1a2e;margin-bottom:6px;">S4 深入：插件源码机制与真实运行流程</h1>
+  <p class="subtitle" style="text-align:center;color:#64748b;font-size:13px;">数据来源：context-mode 插件源码（routing-block.mjs / server.ts / hooks.ts）+ S4 带插件 47 轮日志</p>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">一、插件注入的三层提示词</h3>
+
+    <h4 style="color:#F4732F;">第 1 层：SessionStart 注入 routing block（~2.5K tokens，源码注释注明）</h4>
+    <pre style="background:#f8fafc;border:1px solid #e6eaf0;border-radius:8px;padding:14px;font-size:12px;line-height:1.7;overflow-x:auto;color:#3a3a55;">&lt;context_window_protection&gt;
+  &lt;priority_instructions&gt;
+    Every byte a tool returns enters your conversation memory and costs reasoning capacity.
+    The context-mode tools let you do the work in a sandbox and surface only the derived
+    answer — the raw bytes stay out. Think-in-Code: program the analysis, do not compute it
+    by reading raw data into your conversation.
+  &lt;/priority_instructions&gt;
+
+  &lt;tool_selection_hierarchy&gt;
+    0. MEMORY:    ctx_search(sort: "timeline")
+    1. GATHER:    ctx_batch_execute(commands, queries)   ← 并行跑命令，自动索引
+    2. FOLLOW-UP: ctx_search(queries: [...])             ← 批量检索已索引内容
+    3. PROCESSING: ctx_execute(language, code) | ctx_execute_file(path, language, code)
+       ← 只把 console.log 的结果带进对话，原始字节留在沙箱
+  &lt;/tool_selection_hierarchy&gt;
+
+  &lt;when_not_to_use&gt;   ← 这决定了 S4 的命运
+    - 想分析/总结/提取文件 → 用 ctx_execute_file；Read 只在你要 Edit 文件时才正确
+    - 想处理（过滤/统计/解析）输出 → 用 ctx_batch_execute 或 ctx_execute
+  &lt;/when_not_to_use&gt;
+
+  &lt;file_writing_policy&gt; 写文件用原生 Write/Edit，ctx 沙箱不持久化到宿主文件系统 &lt;/file_writing_policy&gt;
+  &lt;output_constraints&gt; 产物写文件，只返回「路径 + 一行描述」 &lt;/output_constraints&gt;
+  &lt;session_continuity&gt; 记忆是参考，用户最新指令优先 &lt;/session_continuity&gt;
+  &lt;ctx_commands&gt; ctx stats / doctor / upgrade / purge &lt;/ctx_commands&gt;
+&lt;/context_window_protection&gt;</pre>
+
+    <h4 style="color:#F4732F;">第 2 层：PreToolUse hook 拦截原生工具时注入的「劝导」</h4>
+    <ul>
+      <li><strong>createReadGuidance</strong>（拦截 Read）：想分析文件 → 用 ctx_execute_file，字节留在沙箱</li>
+      <li><strong>createGrepGuidance</strong>（拦截 Grep）：想统计/聚合匹配 → 用 ctx_execute 跑搜索</li>
+      <li><strong>createBashGuidance</strong>（拦截 Bash）：想处理输出 → 用 ctx_batch_execute / ctx_execute</li>
+      <li><strong>createExternalMcpGuidance</strong>（拦截外部 MCP）：大 payload → 用 ctx_execute 过滤，或 ctx_fetch_and_index</li>
+    </ul>
+
+    <h4 style="color:#F4732F;">第 3 层：6 个沙箱工具 schema（description 超长，随每轮请求发送）</h4>
+    <table class="cmp-table" style="width:100%;font-size:12px;border-collapse:collapse;">
+      <thead><tr style="background:#FFF4EC;color:#1a1a2e;"><th style="text-align:left;padding:8px 12px;">工具</th><th style="text-align:left;padding:8px 12px;">核心承诺 / 机制</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 12px;"><strong>ctx_execute</strong></td><td style="padding:8px 12px;">沙箱跑代码，只返回 console.log 的内容；输出 &gt;5KB 自动索引、只回标题+预览（server.ts:1662,1680）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>ctx_execute_file</strong></td><td style="padding:8px 12px;">对单个文件跑代码，文件内容经 FILE_CONTENT 变量注入，原始字节不进对话（server.ts:2058）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>ctx_search</strong></td><td style="padding:8px 12px;">对已索引内容（含会话记忆）做 BM25 检索，多 query 一次调用（server.ts:2554）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>ctx_batch_execute</strong></td><td style="padding:8px 12px;">并行跑多命令 + 自动索引 + 同轮返回匹配段，免后续搜索（server.ts:3679）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>ctx_index</strong></td><td style="padding:8px 12px;">把内容存进 FTS5 知识库，原文不回声、按需检索（server.ts:2248）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>ctx_fetch_and_index</strong></td><td style="padding:8px 12px;">抓 URL → 转 Markdown → 索引，返回小预览窗口（server.ts:3423）</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;"><strong>关键机制（server.ts:1504）</strong>：ctx_execute / ctx_execute_file 有 <code>source-code echo</code>——模型写的代码会被「回显」（最多 CODE_ECHO_MAX=2000 字符）加在结果前。这是「写脚本比 Read 更贵」的源码级证据。</p>
+  </div>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">二、hook 调用阶段 ↔ 注入提示词（一一对应）</h3>
+    <table class="cmp-table" style="width:100%;font-size:12px;border-collapse:collapse;">
+      <thead><tr style="background:#FFF4EC;color:#1a1a2e;"><th style="text-align:left;padding:8px 12px;">Hook（调用阶段）</th><th style="text-align:left;padding:8px 12px;">触发时机 / 匹配对象</th><th style="text-align:left;padding:8px 12px;">注入的提示词 / 动作</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 12px;"><strong>SessionStart</strong></td><td style="padding:8px 12px;">会话启动（整个会话只触发 1 次）</td><td style="padding:8px 12px;">注入 <code>routing block</code>（&lt;context_window_protection&gt;，~2.5K tokens）</td></tr>
+        <tr><td style="padding:8px 12px;" rowspan="7"><strong>PreToolUse</strong></td><td style="padding:8px 12px;">模型准备调 <strong>Read</strong> 前</td><td style="padding:8px 12px;">注入 <code>createReadGuidance</code>：「分析文件用 ctx_execute_file，字节留在沙箱」</td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>Grep</strong> 前</td><td style="padding:8px 12px;">注入 <code>createGrepGuidance</code>：「统计/聚合匹配用 ctx_execute」</td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>Bash</strong> 前</td><td style="padding:8px 12px;">注入 <code>createBashGuidance</code>：「处理输出用 ctx_batch_execute」；<strong>拦截 curl/wget</strong></td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>WebFetch</strong> 前</td><td style="padding:8px 12px;">拦截 → 重定向到 <code>ctx_fetch_and_index</code></td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>Agent</strong> 前</td><td style="padding:8px 12px;">注入路由劝导（引导子 agent 也用 ctx 工具）</td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>外部 MCP</strong> 前（mcp__，非自身）</td><td style="padding:8px 12px;">注入 <code>createExternalMcpGuidance</code>：「大 payload 用 ctx_execute 过滤」</td></tr>
+        <tr><td style="padding:8px 12px;">模型准备调 <strong>ctx_execute / ctx_execute_file / ctx_batch_execute</strong> 前</td><td style="padding:8px 12px;">放行（自身工具，不注入）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>PostToolUse</strong></td><td style="padding:8px 12px;">每次工具调用完成后</td><td style="padding:8px 12px;">捕获事件写会话 DB（不注入提示词）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>PreCompact</strong></td><td style="padding:8px 12px;">上下文压缩前</td><td style="padding:8px 12px;">生成 resume 快照（不注入提示词）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>UserPromptSubmit</strong></td><td style="padding:8px 12px;">用户提交 prompt 时</td><td style="padding:8px 12px;">捕获用户决策/纠正（不注入提示词）</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>Stop</strong></td><td style="padding:8px 12px;">回合结束</td><td style="padding:8px 12px;">记录回合状态（不注入提示词）</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">真正「注入提示词」的只有两个：<strong>SessionStart</strong>（注入 routing block，全会话 1 次）和 <strong>PreToolUse</strong>（按 matcher 在模型每次调工具前注入对应 guidance）。其余 hook 只做事件捕获，不进上下文。</p>
+  </div>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">二-补充：PreToolUse 的触发时机与注入机制</h3>
+
+    <p style="font-size:13px;"><strong>触发时机</strong>：模型生成 tool_use（决定调工具）之后、CLI 实际执行工具之前。源码 <code>pretooluse.mjs:164</code> 读的是 <code>input.tool_name</code>（模型这次要调的工具名）——证明 hook 拿到时，模型已经做出了「调哪个工具」的选择。</p>
+
+    <h4 style="color:#F4732F;">两类动作：context（劝导）vs deny（拦截）</h4>
+    <table class="cmp-table" style="width:100%;font-size:12px;border-collapse:collapse;">
+      <thead><tr style="background:#FFF4EC;color:#1a1a2e;"><th style="text-align:left;padding:8px 12px;">动作</th><th style="text-align:left;padding:8px 12px;">机制</th><th style="text-align:left;padding:8px 12px;">生效时机</th><th style="text-align:left;padding:8px 12px;">对应场景</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 12px;"><strong>context（劝导）</strong></td><td style="padding:8px 12px;">返回 <code>hookSpecificOutput.additionalContext</code>（formatters.mjs:79）</td><td style="padding:8px 12px;">追加到【下一轮】模型输入，影响下次选择</td><td style="padding:8px 12px;">Read/Grep/Bash 劝导</td></tr>
+        <tr><td style="padding:8px 12px;"><strong>deny（拦截）</strong></td><td style="padding:8px 12px;">返回 <code>permissionDecision: "deny"</code>（formatters.mjs:11）</td><td style="padding:8px 12px;">当场拒绝当前调用</td><td style="padding:8px 12px;">curl/wget、WebFetch</td></tr>
+      </tbody>
+    </table>
+
+    <h4 style="color:#F4732F;">劝导有节流：不是每次调用都注入</h4>
+    <p style="font-size:13px;"><code>routing.mjs:36</code> 注释明说「each advisory type at most once per session」（每类劝导每会话最多一次）。Read/Grep/Bash 用 <code>guidanceOnce</code>（每类每会话最多注入 1 次）；外部 MCP 用 <code>guidancePeriodic</code>（每隔 N 次再提醒一次）。</p>
+
+    <h4 style="color:#F4732F;">完整时序</h4>
+    <div class="mermaid">
+sequenceDiagram
+    participant M as 模型
+    participant C as Claude Code CLI
+    participant H as PreToolUse hook
+    M->>C: 生成 tool_use「我要调 Read」
+    C->>H: 触发（stdin 传 tool_name=Read）
+    H->>C: 返回 allow + additionalContext(guidance)
+    C->>C: 本次 Read 照常执行
+    C->>M: 下一轮输入追加 guidance
+    M->>M: 看到劝导，下次改用 ctx_execute_file
+    </div>
+
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">这也解释了 S4 里模型第 1 轮还在用 <code>Bash ls</code> 定位文件（没被当场拦下）——因为 guidance 是「下一轮才生效」的劝导、且每类只劝一次，不是「当场改写」当前调用。</p>
+  </div>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">三、S4 真实运行流程（47 轮日志逐轮还原）</h3>
+    <table class="cmp-table" style="width:100%;font-size:12px;border-collapse:collapse;">
+      <thead><tr style="background:#FFF4EC;color:#1a1a2e;"><th style="text-align:left;padding:8px 12px;">轮</th><th style="text-align:left;padding:8px 12px;">工具</th><th style="text-align:left;padding:8px 12px;">模型在干嘛</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:6px 12px;">R1</td><td style="padding:6px 12px;">Bash ls</td><td style="padding:6px 12px;">先定位 epub 文件（首次请求 in=28,363，含 routing block + system + prompt）</td></tr>
+        <tr><td style="padding:6px 12px;">R1</td><td style="padding:6px 12px;">ctx_execute ×6</td><td style="padding:6px 12px;">写 JS：解压 EPUB(ZIP) → 读 opf → 读 nav → 提取章节 → 剥 HTML → 提正文</td></tr>
+        <tr><td style="padding:6px 12px;">R1</td><td style="padding:6px 12px;">Write</td><td style="padding:6px 12px;">写 analysis-round1.md</td></tr>
+        <tr><td style="padding:6px 12px;">R2</td><td style="padding:6px 12px;">ctx_execute ×5 + ctx_search ×2</td><td style="padding:6px 12px;">继续写脚本提正文；用 ctx_search 搜「ReAct/上下文工程/KV Cache/Coding Agent」</td></tr>
+        <tr><td style="padding:6px 12px;">R3</td><td style="padding:6px 12px;">ctx_execute ×4 + ctx_search ×2</td><td style="padding:6px 12px;">写脚本；搜「Pass@k/LLM-as-a-Judge/SFT RL」</td></tr>
+        <tr style="background:#fef2f2;"><td style="padding:6px 12px;">R3</td><td style="padding:6px 12px;"><strong>Bash ls + cp</strong></td><td style="padding:6px 12px;"><strong>沙箱不持久，把解压结果 cp 出沙箱（额外开销）</strong></td></tr>
+        <tr><td style="padding:6px 12px;">R3~R5</td><td style="padding:6px 12px;">ctx_execute_file ×多</td><td style="padding:6px 12px;">文件已落到磁盘，改用 ctx_execute_file 处理</td></tr>
+        <tr><td style="padding:6px 12px;">R4</td><td style="padding:6px 12px;">ctx_search ×2 + ctx_execute_file ×多</td><td style="padding:6px 12px;">搜「实验/OpenClaw/安全护栏」；写 round4.md</td></tr>
+        <tr><td style="padding:6px 12px;">R5</td><td style="padding:6px 12px;">ctx_execute_file ×2 + Write</td><td style="padding:6px 12px;">写 round5.md，收尾</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">不带插件对照：Read ×51 直接读文件，无「写脚本/回显/搬沙箱」环节。</p>
+  </div>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">四、5 轮运行流程图（每轮一张）</h3>
+    <p style="font-size:12px;color:#64748b;">橙色 = hook 注入；红色 = 插件带来的额外开销；绿色 = 本轮产出。</p>
+
+    <h4 style="color:#F4732F;">第 1 轮：书籍结构概览</h4>
+    <div class="mermaid">
+flowchart LR
+    A["SessionStart 注入 routing block ~2.5K"] --> B{"模型想读 epub"}
+    B -->|"PreToolUse 拦 Read：别用 Read 用 ctx_execute_file"| C["Bash ls 定位文件"]
+    C --> D["ctx_execute x6：解压ZIP/读opf/读nav/提取章节/剥HTML"]
+    D --> E["Write round1.md"]
+    style A fill:#FFF4EC,stroke:#F4732F
+    style D fill:#fef2f2,stroke:#ef4444
+    style E fill:#ecfdf5,stroke:#10b981
+    </div>
+
+    <h4 style="color:#F4732F;">第 2 轮：技术体系分析</h4>
+    <div class="mermaid">
+flowchart LR
+    A["ctx_execute x5 继续提正文"] --> B["ctx_search x2 搜 ReAct/KV Cache/Coding Agent"]
+    B --> C["Write round2.md"]
+    style C fill:#ecfdf5,stroke:#10b981
+    </div>
+
+    <h4 style="color:#F4732F;">第 3 轮：工程实践分析</h4>
+    <div class="mermaid">
+flowchart LR
+    A["ctx_execute x4"] --> B["ctx_search x2 搜 Pass@k/SFT RL"]
+    B --> C["Bash cp 搬沙箱（沙箱不持久）"]
+    C --> D["ctx_execute_file"]
+    D --> E["Write round3.md"]
+    style C fill:#fef2f2,stroke:#ef4444
+    style E fill:#ecfdf5,stroke:#10b981
+    </div>
+
+    <h4 style="color:#F4732F;">第 4 轮：案例与应用分析</h4>
+    <div class="mermaid">
+flowchart LR
+    A["ctx_search x2 搜 实验/OpenClaw/安全护栏"] --> B["ctx_execute_file x多"]
+    B --> C["Write round4.md"]
+    style C fill:#ecfdf5,stroke:#10b981
+    </div>
+
+    <h4 style="color:#F4732F;">第 5 轮：综合评价与建议</h4>
+    <div class="mermaid">
+flowchart LR
+    A["ctx_execute_file x2"] --> B["Write round5.md"]
+    style B fill:#ecfdf5,stroke:#10b981
+    </div>
+
+    <p style="font-size:12px;color:#64748b;margin-top:8px;">整体闭环：第 1 轮 SessionStart 注入 routing block（全会话仅 1 次）→ 之后每轮都在「写脚本（ctx_execute）→ 检索（ctx_search）→ 写文档（Write）」中循环；第 3 轮暴露沙箱不持久的缺陷，多付了 Bash cp 搬移开销。不带插件对照则是「Read ×51 → Write ×5」的简单循环，无额外环节。</p>
+  </div>
+
+  <div class="insight">
+    <h3 style="font-size:17px;color:#1a1a2e;">五、根本原因</h3>
+    <div style="background:#FFF7F0;padding:16px 20px;border-radius:8px;font-size:14px;line-height:1.8;">
+      <p><strong>S4 是「读一本书 → 写长文」的任务。</strong>写长文必须理解书的内容，而理解内容必须让内容进上下文——所以插件的「把原始数据挡在沙箱外」这套，在 S4 里<strong>省不掉</strong>（内容终究要进来喂给模型）。</p>
+      <p>但插件不管任务性质，仍然逼模型「别读文件、写脚本去读」，于是模型白写了 30+ 段 JS，额外付出了：<strong>routing block 固定税（~2.5K×每轮）+ 写脚本（输出）+ 代码回显（2000 字符/次）+ 沙箱搬移（Bash cp）</strong>。该省的一点没省，反而多付了一堆固定成本。</p>
+      <p style="font-weight:700;color:#F4732F;">结论：插件省的是「重复命令的往返」，S4 没有可省的往返，只有「写脚本」的纯额外开销 → 新增输入 +73.9%（367,662 → 639,182）。</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>
