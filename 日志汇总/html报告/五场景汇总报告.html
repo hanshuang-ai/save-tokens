@@ -2162,35 +2162,6 @@ window.addEventListener('resize', function() {
 });
 
 })();
-
-(function () {
-  // —— Scrollspy：滚动时高亮当前章节 ——
-  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
-  var sections = Array.prototype.slice.call(document.querySelectorAll('.scenario-section'));
-  var navMap = {};
-  links.forEach(function (l) { navMap[l.getAttribute('href').slice(1)] = l; });
-  if ('IntersectionObserver' in window && sections.length) {
-    var obs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting && navMap[e.target.id]) {
-          links.forEach(function (l) { l.classList.remove('active'); });
-          navMap[e.target.id].classList.add('active');
-        }
-      });
-    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
-    sections.forEach(function (s) { obs.observe(s); });
-  }
-  // —— 返回顶部按钮 ——
-  var btn = document.createElement('button');
-  btn.id = 'back-to-top';
-  btn.innerHTML = '&uarr;';
-  btn.setAttribute('aria-label', '返回顶部');
-  document.body.appendChild(btn);
-  function toggleBtn() { btn.style.display = window.scrollY > 560 ? 'flex' : 'none'; }
-  window.addEventListener('scroll', toggleBtn, { passive: true });
-  toggleBtn();
-  btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
@@ -2391,5 +2362,36 @@ flowchart LR
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  // —— Scrollspy：滚动时高亮当前章节（放在末尾，确保 DOM 全部解析后再收集 section）——
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.scenario-section'));
+  var navMap = {};
+  links.forEach(function (l) { navMap[l.getAttribute('href').slice(1)] = l; });
+  if ('IntersectionObserver' in window && sections.length) {
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && navMap[e.target.id]) {
+          links.forEach(function (l) { l.classList.remove('active'); });
+          navMap[e.target.id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+    sections.forEach(function (s) { obs.observe(s); });
+  }
+  // —— 返回顶部按钮 ——
+  var btn = document.createElement('button');
+  btn.id = 'back-to-top';
+  btn.innerHTML = '&uarr;';
+  btn.setAttribute('aria-label', '返回顶部');
+  document.body.appendChild(btn);
+  function toggleBtn() { btn.style.display = window.scrollY > 560 ? 'flex' : 'none'; }
+  window.addEventListener('scroll', toggleBtn, { passive: true });
+  toggleBtn();
+  btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
 </body>
 </html>
