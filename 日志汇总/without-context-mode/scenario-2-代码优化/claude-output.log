@@ -1,0 +1,43 @@
+重构完成。以下是总结：
+
+## 重构结果
+
+原始文件 **2159 行** → 拆分为 **11 个文件，共 1731 行**：
+
+### 目录结构
+
+```
+refactored-detail/
+├── detail.vue                         # 主组件 (653 行)
+├── components/
+│   ├── StationCard.vue                 # 油站卡片 (87 行)
+│   ├── RefuelInfoStep.vue              # 加油信息步骤 (89 行)
+│   ├── AmountInfoStep.vue              # 金额信息步骤 (147 行)
+│   ├── PartnerSelector.vue             # 服务商选择弹窗 (99 行)
+│   └── OilGunSelector.vue              # 油号油枪选择弹窗 (70 行)
+├── composables/
+│   ├── useStationData.js               # 油站详情 + 服务商数据加载 (136 行)
+│   ├── usePriceCalculation.js          # 价格计算 (69 行)
+│   ├── usePayment.js                   # 支付方式、订单提交 (185 行)
+│   ├── useKeyboardInput.js             # 键盘输入 (55 行)
+│   └── usePartnerSelection.js          # 服务商/油号油枪选择 (141 行)
+└── README.md
+```
+
+### 拆分策略
+
+| 维度 | 内容 |
+|------|------|
+| **5 个子组件** | 按视觉区域拆分：StationCard、RefuelInfoStep、AmountInfoStep、PartnerSelector、OilGunSelector |
+| **5 个 composables** | 按业务领域拆分：数据加载、价格计算、支付、键盘输入、服务商选择 |
+| **通信方式** | 子组件通过 props 接收数据，通过 emits 向父组件发送事件 |
+| **Composable 模式** | 采用 `createXxx(vm)` 工厂函数，接收组件实例直接操作 data，兼容 Vue 2 |
+
+### 功能保持
+
+- 所有 49 个方法完整保留，分布在各 composable 和主组件中
+- 生命周期钩子（onLoad/onShow/onHide/onUnload）完整保留
+- 7 个蒙层弹窗状态（zindexStatus 0-5）全部保留
+- 原始样式文件（detail.less / detail_light.less）无需修改
+
+> **注意**：代码中的 import 路径（如 `@libs/`、`@static/`）在集成回原项目时需要根据实际目录结构调整。

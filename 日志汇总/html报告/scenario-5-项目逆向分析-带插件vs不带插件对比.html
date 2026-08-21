@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目逆向分析：带插件 vs 不带插件 对比分析</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; color: #333; padding: 24px; line-height: 1.7; text-align: left; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 26px; margin-bottom: 6px; color: #1a1a2e; font-weight: 700; }
+  .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 16px; }
+  .effect-badge { display: inline-block; padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 13px; font-weight: 600; background: #27ae60; }
+  .header-effect { text-align: center; margin-bottom: 20px; }
+  .metric-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric-card { background: #fff; border-radius: 10px; padding: 16px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); text-align: center; border-top: 3px solid #F4732F; }
+  .metric-label { font-size: 12px; color: #999; margin-bottom: 8px; font-weight: 500; }
+  .metric-wo { font-size: 13px; color: #bbb; text-decoration: line-through; }
+  .metric-arrow { font-size: 14px; color: #ddd; margin: 3px 0; }
+  .metric-wi { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  .metric-change { font-size: 14px; font-weight: 700; margin-top: 6px; }
+  .metric-change.down { color: #27ae60; }
+  .metric-change.up { color: #e74c3c; }
+  .section { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .section h2 { font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px; }
+  .section h3 { font-size: 15px; margin: 18px 0 10px; color: #333; }
+  .section h4 { font-size: 14px; margin: 14px 0 8px; color: #555; }
+  .section h5 { font-size: 13px; margin: 12px 0 6px; color: #666; }
+  .section p { margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 14px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  th:first-child, td:first-child { text-align: left; }
+  th { background: #FFF7F0; font-weight: 600; color: #555; }
+  tr.highlight { background: #FFF7F0; }
+  tr.highlight td { font-weight: 600; }
+  .up { color: #e74c3c; }
+  .down { color: #27ae60; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-box { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #1a1a2e; }
+  .chart { width: 100%; height: 300px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .info-item { background: #f8f9fa; padding: 12px 16px; border-radius: 8px; border-left: 3px solid #F4732F; }
+  .info-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+  .info-value { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin-bottom: 6px; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #F4732F; }
+  .prompt-box { background: #FFF7F0; padding: 18px 20px; border-radius: 8px; font-size: 13px; max-height: 350px; overflow-y: auto; line-height: 1.8; }
+  .prompt-box h3 { font-size: 15px; margin: 12px 0 6px; color: #F4732F; }
+  .prompt-box h4 { font-size: 14px; margin: 10px 0 5px; color: #555; }
+  .prompt-box h5 { font-size: 13px; margin: 8px 0 4px; color: #666; }
+  .prompt-box ul { margin: 6px 0; }
+  .prompt-box p { margin-bottom: 6px; }
+  @media (max-width: 900px) { .metric-cards { grid-template-columns: repeat(2, 1fr); } .chart-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>项目逆向分析：带插件 vs 不带插件 对比分析</h1>
+  <p class="subtitle">数据来源：日志自动分析 | 生成时间：2026-08-21</p>
+  <div class="header-effect">
+    插件效果评级：<span class="effect-badge">显著正向</span>
+  </div>
+
+  <div class="metric-cards">
+    <div class="metric-card">
+      <div class="metric-label">总时长</div>
+      <div class="metric-wo">19分40秒</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">6分23秒</div>
+      <div class="metric-change down">-67.5%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">总 Token</div>
+      <div class="metric-wo">355,006</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">155,342</div>
+      <div class="metric-change down">-56.2%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">输出量</div>
+      <div class="metric-wo">76,172</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">26,775</div>
+      <div class="metric-change up">-64.8%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">API 调用</div>
+      <div class="metric-wo">56</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">15</div>
+      <div class="metric-change down">-73.2%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">工具调用</div>
+      <div class="metric-wo">103次</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">24次（插件4）</div>
+      <div class="metric-change down">-76.7%</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>一、项目背景</h2>
+    <h3>任务描述</h3>
+    <div class="prompt-box"><p>请全面分析智慧加油小程序项目，逆向生成完整的产品需求文档和测试用例：</p>
+<p>项目在 taro_refuel_6_A_新主线 这个目录下</p>
+<h4>第一部分：产品需求文档（PRD）</h4>
+<h5>1. 项目概述</h5>
+<ul>
+<li>分析项目整体结构，理解产品定位</li>
+<li>识别目标用户和使用场景</li>
+<li>梳理核心功能模块</li>
+</ul>
+<h5>2. 功能清单</h5>
+<p>逐一分析以下页面，列出所有功能点：</p>
+<ul>
+<li>src/pages/index1/（首页）</li>
+<li>src/pages/detail/（加油详情页）</li>
+<li>src/pages/order/（订单页）</li>
+<li>src/pages/ucenter/（个人中心）</li>
+<li>src/pages/oilCashback/（加油返现）</li>
+<li>src/pages/activity/（活动页）</li>
+<li>src/component/（公共组件）</li>
+</ul>
+<h5>3. 业务流程图（必须包含 Mermaid 流程图）</h5>
+<p>请为以下核心流程绘制流程图：</p>
+<ul>
+<li>用户加油完整流程（从打开 App 到支付完成）</li>
+<li>订单创建流程</li>
+<li>支付流程</li>
+<li>用户登录/注册流程</li>
+<li>返现领取流程</li>
+</ul>
+<h5>4. 数据模型</h5>
+<ul>
+<li>分析 API 接口定义</li>
+<li>推导数据模型结构</li>
+<li>列出关键数据实体</li>
+</ul>
+<h5>5. 页面交互说明</h5>
+<ul>
+<li>每个页面的交互逻辑</li>
+<li>页面间跳转关系</li>
+<li>异常处理流程</li>
+</ul>
+<h4>第二部分：详细测试用例</h4>
+<h5>1. 功能测试用例</h5>
+<p>为每个功能模块编写测试用例，格式如下：</p>
+<p><strong>用例编号</strong>：TC-模块-序号</p>
+<p><strong>模块</strong>：所属功能模块</p>
+<p><strong>标题</strong>：测试用例标题</p>
+<p><strong>前置条件</strong>：测试执行前需要满足的条件</p>
+<p><strong>测试步骤</strong>：</p>
+<p>1. 步骤1</p>
+<p>2. 步骤2</p>
+<p>3. ...</p>
+<p><strong>预期结果</strong>：期望的输出或行为</p>
+<p><strong>优先级</strong>：P0/P1/P2/P3</p>
+<p><strong>测试类型</strong>：功能/性能/安全/兼容性</p>
+<h5>2. 测试用例覆盖范围</h5>
+<p>请至少包含以下模块的测试用例：</p>
+<ul>
+<li>首页模块（至少 10 个用例）</li>
+<li>加油详情页（至少 15 个用例）</li>
+<li>订单模块（至少 15 个用例）</li>
+<li>个人中心（至少 10 个用例）</li>
+<li>支付流程（至少 10 个用例）</li>
+<li>异常场景（至少 10 个用例）</li>
+</ul>
+<h5>3. 边界测试用例</h5>
+<ul>
+<li>网络异常场景</li>
+<li>数据为空场景</li>
+<li>并发操作场景</li>
+<li>权限不足场景</li>
+</ul>
+<h5>4. 兼容性测试用例</h5>
+<ul>
+<li>不同屏幕尺寸</li>
+<li>不同操作系统</li>
+<li>不同浏览器/小程序版本</li>
+</ul>
+<h4>第三部分：输出要求</h4>
+<p>1. 生成完整的 PRD 文档（Markdown 格式）</p>
+<p>2. 生成完整的测试用例表格（Markdown 格式）</p>
+<p>3. 所有流程图使用 Mermaid 语法</p>
+<p>4. 输出目录：E:\WT\save-tokens\project-docs\</p>
+<p>5. 文件命名：</p>
+<ul>
+<li>PRD.md（产品需求文档）</li>
+<li>test-cases.md（测试用例）</li>
+<li>data-model.md（数据模型）</li>
+<li>flow-diagrams.md（流程图集合）</li>
+</ul></div>
+    <h3>项目规模</h3>
+    <div class="info-grid">
+      <div class="info-item"><div class="info-label">读取文件数</div><div class="info-value">43</div></div>
+      <div class="info-item"><div class="info-label">写入文件数</div><div class="info-value">4</div></div>
+      <div class="info-item"><div class="info-label">API 调用数（不带插件）</div><div class="info-value">56</div></div>
+      <div class="info-item"><div class="info-label">API 调用数（带插件）</div><div class="info-value">15</div></div>
+      <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">任务类型</div><div class="info-value">项目逆向/多Agent协作型 — 分析现有项目结构，使用Agent工具委派子任务</div></div>
+    </div>
+    <h3>任务特征</h3>
+    <ul><li>大量使用 Agent 工具委派子任务（不带插件用了8次Agent调用），带插件完全不用Agent</li><li>依赖 TaskCreate/TaskUpdate 进行任务管理（两种模式都用了4次TaskCreate + 8次TaskUpdate）</li><li>输出为 PRD、测试用例、数据模型、流程图等文档（共4个文件）</li><li>主 agent 通过 Agent 子任务和 Bash/Glob 分析项目结构</li><li>上下文随项目分析不断累积，缓存读取量大</li></ul>
+    <h4>生成的文件</h4><ul><li><code>E:\WT\save-tokens\project-docs\PRD.md</code></li><li><code>E:\WT\save-tokens\project-docs\data-model.md</code></li><li><code>E:\WT\save-tokens\project-docs\flow-diagrams.md</code></li><li><code>E:\WT\save-tokens\project-docs\test-cases.md</code></li></ul>
+  </div>
+
+  <div class="section">
+    <h2>二、全指标对比表</h2>
+    <table>
+      <thead><tr><th>指标</th><th>不带插件</th><th>带插件</th><th>变化</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>总时长 (Wall Clock)</td><td>19分40秒</td><td>6分23秒</td><td class="down">-67.5%</td></tr>
+<tr class="highlight"><td>API 请求次数</td><td>56</td><td>15</td><td class="down">-73.2%</td></tr>
+<tr class="highlight"><td>API 累计耗时</td><td>19分06秒</td><td>5分45秒</td><td class="down">-69.9%</td></tr>
+<tr><td>本地处理总时长</td><td>0分33秒</td><td>0分38秒</td><td class="up">+16.2%</td></tr>
+<tr><td>本地处理平均时长</td><td>0.61s</td><td>2.77s</td><td class="up">+356.7%</td></tr>
+<tr><td>本地处理中位数间隔</td><td>0.04s</td><td>1.21s</td><td class="up">+3173.0%</td></tr>
+<tr><td>本地处理最长间隔</td><td>13.88s</td><td>20.15s</td><td class="up">+45.2%</td></tr>
+<tr><td>工具调用次数</td><td>103</td><td>24</td><td class="down">-76.7%</td></tr>
+<tr><td>新增输入 tokens</td><td>278,834</td><td>128,567</td><td class="down">-53.9%</td></tr>
+<tr><td>缓存读取 tokens</td><td>2,117,632</td><td>1,097,728</td><td class="down">-48.2%</td></tr>
+<tr><td>缓存创建 tokens</td><td>0</td><td>0</td><td class="">N/A</td></tr>
+<tr><td>实际总输入 tokens</td><td>2,396,466</td><td>1,226,295</td><td class="down">-48.8%</td></tr>
+<tr><td>输出 tokens</td><td>76,172</td><td>26,775</td><td class="down">-64.8%</td></tr>
+<tr class="highlight"><td>总 Token (新增输入+输出)</td><td>355,006</td><td>155,342</td><td class="down">-56.2%</td></tr>
+<tr><td>缓存命中率</td><td>88.4%</td><td>89.5%</td><td class="up">+1.3%</td></tr>
+<tr><td>平均每次缓存读取</td><td>41,522</td><td>73,182</td><td class="up">+76.2%</td></tr>
+<tr><td>单次缓存读取峰值</td><td>94,208</td><td>110,592</td><td class="up">+17.4%</td></tr>
+<tr><td>思考耗时（累计）</td><td>0分44秒</td><td>0分16秒</td><td class="down">-63.1%</td></tr>
+<tr><td>输出耗时（累计）</td><td>16分54秒</td><td>5分01秒</td><td class="down">-70.3%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>89.3 tok/s</td><td>134.2 tok/s</td><td class="up">+50.2%</td></tr>
+<tr><td>最长 API 调用</td><td>id=53, 135.1s</td><td>id=13, 124.7s</td><td class="down">-7.7%</td></tr>
+<tr><td>最长调用输出 tokens</td><td>10,798</td><td>10,628</td><td class="down">-1.6%</td></tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-box">
+      <div class="chart-title">核心指标变化率（带插件 vs 不带插件）</div>
+      <div id="chart-core" class="chart" style="height:320px;"></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">Token 构成对比</div>
+        <div id="chart-token" class="chart"></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">时间构成对比（秒）</div>
+        <div id="chart-time" class="chart"></div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">工具调用分布对比</div>
+      <div id="chart-tools" class="chart"></div>
+    </div>
+
+  <div class="section">
+    <h2>三、工具调用分布明细</h2>
+    <table>
+      <thead><tr><th>工具</th><th>类型</th><th>不带插件</th><th>带插件</th></tr></thead>
+      <tbody>
+        <tr><td>Read</td><td>原生</td><td>55</td><td>0</td></tr>
+<tr><td>Bash</td><td>原生</td><td>15</td><td>3</td></tr>
+<tr><td>TaskUpdate</td><td>原生</td><td>8</td><td>8</td></tr>
+<tr><td>Glob</td><td>原生</td><td>9</td><td>1</td></tr>
+<tr><td>TaskCreate</td><td>原生</td><td>4</td><td>4</td></tr>
+<tr><td>Agent</td><td>原生</td><td>8</td><td>0</td></tr>
+<tr><td>Write</td><td>原生</td><td>4</td><td>4</td></tr>
+<tr><td>ctx_batch_execute</td><td><span style="color:#F4732F;font-weight:600">插件工具</span></td><td>0</td><td>4</td></tr>
+
+        <tr style="font-weight:600;background:#FFF7F0"><td>合计</td><td></td><td>103</td><td>24</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>四、关键发现</h2>
+    <ul>
+      <li><strong>速度</strong>：总时长从 19分40秒 变为 6分23秒（-67.5%），API 调用从 56 变为 15（-73.2%）</li>
+      <li><strong>成本</strong>：总 Token 从 355,006 变为 155,342（-56.2%），其中新增输入 -53.9%，缓存读取 -48.2%</li>
+      <li><strong>输出</strong>：输出 tokens 从 76,172 变为 26,775（-64.8%）</li>
+      <li><strong>工具链</strong>：工具调用从 103 次变为 24 次（-76.7%），其中插件工具 4 次（仅带插件模式可用）</li>
+      <li><strong>缓存</strong>：缓存命中率从 88.4% 变为 89.5%（+1.3%）</li>
+      <li><strong>最长调用</strong>：从 135.1s（输出 10,798 token）变为 124.7s（输出 10,628 token）</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>五、插件适用性分析</h2>
+    <h3>本场景插件效果：显著正向</h3><ul><li><strong>速度大幅提升</strong>（-67.5%，19分→6分），<strong>成本大幅降低</strong>（token -56.2%）</li><li>插件批量执行替代多Agent协作：不带插件用8次Agent委派子任务（每次Agent都需要独立的API调用和上下文），带插件用4次 ctx_batch_execute 批量执行，API调用从56降至15（-73.2%）</li><li>任务管理机制一致：两种模式都用了TaskCreate(4)+TaskUpdate(8)，说明任务管理不是瓶颈，瓶颈在执行方式</li><li>上下文更精简：实际总输入减少48.8%，缓存读取减少48.2%</li><li><strong>注意</strong>：输出量减少64.8%（76,172→26,775 token），需验证 PRD 和测试用例的完整性和深度是否达标</li></ul><h4>插件适合的任务特征</h4><ul><li>✅ 可拆分为批量子任务的项目分析/逆向任务</li><li>✅ 大量重复性命令执行（批量处理）</li><li>✅ 有明确交付物的分析型任务</li><li>⚠️ 多Agent协作型任务：插件的批量执行可以替代多Agent，大幅减少API调用</li></ul>
+  </div>
+</div>
+
+<script>
+// 核心指标变化率横向条形图
+const coreChart = echarts.init(document.getElementById('chart-core'));
+const coreMetrics = ["总时长", "输出 Token", "总 Token", "输入 Token", "最长 API 调用", "最长调用输出", "缓存命中率"];
+const coreChanges = [-67.5, -64.8, -56.2, -53.9, -7.7, -1.6, 1.2];
+const coreColors = ["#27ae60", "#e74c3c", "#27ae60", "#27ae60", "#27ae60", "#27ae60", "#27ae60"];
+const coreWoVals = [1180.2, 76172, 355006, 278834, 135.1, 10798, 88.4];
+const coreWiVals = [383.8, 26775, 155342, 128567, 124.7, 10628, 89.5];
+const coreUnits = ["s", "", "", "", "s", "", "%"];
+coreChart.setOption({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'shadow' },
+    formatter: function(params) {
+      const idx = params[0].dataIndex;
+      const wo = coreWoVals[idx];
+      const wi = coreWiVals[idx];
+      const unit = coreUnits[idx];
+      const change = coreChanges[idx];
+      return coreMetrics[idx] + '<br/>'
+        + '不带插件: ' + wo.toLocaleString() + unit + '<br/>'
+        + '带插件: ' + wi.toLocaleString() + unit + '<br/>'
+        + '<strong>变化: ' + (change >= 0 ? '+' : '') + change + '%</strong>';
+    }
+  },
+  grid: { left: '15%', right: '10%', top: '5%', bottom: '5%' },
+  xAxis: {
+    type: 'value',
+    name: '变化率 (%)',
+    nameLocation: 'middle',
+    nameGap: 25,
+    axisLabel: { formatter: '{value}%' }
+  },
+  yAxis: {
+    type: 'category',
+    data: coreMetrics,
+    axisLabel: { fontSize: 12 }
+  },
+  series: [{
+    type: 'bar',
+    data: coreChanges.map((v, i) => ({ value: v, itemStyle: { color: coreColors[i] } })),
+    label: {
+      show: true,
+      position: 'right',
+      formatter: function(p) { return (p.value >= 0 ? '+' : '') + p.value + '%'; },
+      fontSize: 11
+    },
+    barWidth: '50%'
+  }],
+  markLine: {
+    silent: true,
+    symbol: 'none',
+    lineStyle: { color: '#999', type: 'dashed' },
+    data: [{ xAxis: 0 }]
+  }
+});
+
+const tokenChart = echarts.init(document.getElementById('chart-token'));
+tokenChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['新增输入', '缓存读取', '输出'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'category', data: ['不带插件', '带插件'] },
+  yAxis: { type: 'value', name: 'tokens' },
+  series: [
+    { name: '新增输入', type: 'bar', stack: 'total', data: [278834, 128567], itemStyle: { color: '#F4732F' } },
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [2117632, 1097728], itemStyle: { color: '#FFA94D' } },
+    { name: '输出', type: 'bar', stack: 'total', data: [76172, 26775], itemStyle: { color: '#fbbf24' } }
+  ]
+});
+
+const toolNames = ["Read", "Bash", "TaskUpdate", "Glob", "TaskCreate", "Agent", "Write", "ctx_batch_execute"];
+const woTools = {"Read": 55, "Bash": 15, "TaskUpdate": 8, "Glob": 9, "TaskCreate": 4, "Agent": 8, "Write": 4, "ctx_batch_execute": 0};
+const wiTools = {"Read": 0, "Bash": 3, "TaskUpdate": 8, "Glob": 1, "TaskCreate": 4, "Agent": 0, "Write": 4, "ctx_batch_execute": 4};
+const toolsChart = echarts.init(document.getElementById('chart-tools'));
+toolsChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['不带插件', '带插件'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'value', name: '次数' },
+  yAxis: { type: 'category', data: toolNames, axisLabel: { fontSize: 11 } },
+  series: [
+    { name: '不带插件', type: 'bar', data: toolNames.map(t => woTools[t] || 0), itemStyle: { color: '#cbd5e1' } },
+    { name: '带插件', type: 'bar', data: toolNames.map(t => wiTools[t] || 0), itemStyle: { color: '#F4732F' } }
+  ]
+});
+
+const timeChart = echarts.init(document.getElementById('chart-time'));
+timeChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['思考', '输出', '本地处理'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'category', data: ['不带插件', '带插件'] },
+  yAxis: { type: 'value', name: '秒' },
+  series: [
+    { name: '思考', type: 'bar', stack: 'total', data: [44.1, 16.2], itemStyle: { color: '#fbbf24' } },
+    { name: '输出', type: 'bar', stack: 'total', data: [1014.3, 301.2], itemStyle: { color: '#F4732F' } },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [33.3, 38.7], itemStyle: { color: '#e2e8f0' } }
+  ]
+});
+
+window.addEventListener('resize', function() {
+  ['chart-core','chart-token','chart-tools','chart-time'].forEach(id => {
+    const c = echarts.getInstanceByDom(document.getElementById(id));
+    if (c) c.resize();
+  });
+});
+</script>
+</body>
+</html>

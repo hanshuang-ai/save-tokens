@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>书籍分析：带插件 vs 不带插件 对比分析</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; color: #333; padding: 24px; line-height: 1.7; text-align: left; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 26px; margin-bottom: 6px; color: #1a1a2e; font-weight: 700; }
+  .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 16px; }
+  .effect-badge { display: inline-block; padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 13px; font-weight: 600; background: #e74c3c; }
+  .header-effect { text-align: center; margin-bottom: 20px; }
+  .metric-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric-card { background: #fff; border-radius: 10px; padding: 16px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); text-align: center; border-top: 3px solid #F4732F; }
+  .metric-label { font-size: 12px; color: #999; margin-bottom: 8px; font-weight: 500; }
+  .metric-wo { font-size: 13px; color: #bbb; text-decoration: line-through; }
+  .metric-arrow { font-size: 14px; color: #ddd; margin: 3px 0; }
+  .metric-wi { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  .metric-change { font-size: 14px; font-weight: 700; margin-top: 6px; }
+  .metric-change.down { color: #27ae60; }
+  .metric-change.up { color: #e74c3c; }
+  .section { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .section h2 { font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px; }
+  .section h3 { font-size: 15px; margin: 18px 0 10px; color: #333; }
+  .section h4 { font-size: 14px; margin: 14px 0 8px; color: #555; }
+  .section h5 { font-size: 13px; margin: 12px 0 6px; color: #666; }
+  .section p { margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 14px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  th:first-child, td:first-child { text-align: left; }
+  th { background: #FFF7F0; font-weight: 600; color: #555; }
+  tr.highlight { background: #FFF7F0; }
+  tr.highlight td { font-weight: 600; }
+  .up { color: #e74c3c; }
+  .down { color: #27ae60; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-box { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #1a1a2e; }
+  .chart { width: 100%; height: 300px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .info-item { background: #f8f9fa; padding: 12px 16px; border-radius: 8px; border-left: 3px solid #F4732F; }
+  .info-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+  .info-value { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin-bottom: 6px; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #F4732F; }
+  .prompt-box { background: #FFF7F0; padding: 18px 20px; border-radius: 8px; font-size: 13px; max-height: 350px; overflow-y: auto; line-height: 1.8; }
+  .prompt-box h3 { font-size: 15px; margin: 12px 0 6px; color: #F4732F; }
+  .prompt-box h4 { font-size: 14px; margin: 10px 0 5px; color: #555; }
+  .prompt-box h5 { font-size: 13px; margin: 8px 0 4px; color: #666; }
+  .prompt-box ul { margin: 6px 0; }
+  .prompt-box p { margin-bottom: 6px; }
+  @media (max-width: 900px) { .metric-cards { grid-template-columns: repeat(2, 1fr); } .chart-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>书籍分析：带插件 vs 不带插件 对比分析</h1>
+  <p class="subtitle">数据来源：日志自动分析 | 生成时间：2026-08-21</p>
+  <div class="header-effect">
+    插件效果评级：<span class="effect-badge">偏负向</span>
+  </div>
+
+  <div class="metric-cards">
+    <div class="metric-card">
+      <div class="metric-label">总时长</div>
+      <div class="metric-wo">15分55秒</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">16分00秒</div>
+      <div class="metric-change up">+0.5%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">总 Token</div>
+      <div class="metric-wo">424,498</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">697,164</div>
+      <div class="metric-change up">+64.2%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">输出量</div>
+      <div class="metric-wo">56,836</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">57,982</div>
+      <div class="metric-change down">+2.0%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">API 调用</div>
+      <div class="metric-wo">53</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">47</div>
+      <div class="metric-change down">-11.3%</div>
+    </div><div class="metric-card">
+      <div class="metric-label">工具调用</div>
+      <div class="metric-wo">73次</div>
+      <div class="metric-arrow">→</div>
+      <div class="metric-wi">48次（插件36）</div>
+      <div class="metric-change down">-34.2%</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>一、项目背景</h2>
+    <h3>任务描述</h3>
+    <div class="prompt-box"><p>请深度分析 AI-Agents-in-Depth-zh-CN.epub</p>
+<p>【第1轮】书籍结构概览</p>
+<ul>
+<li>梳理全书 10 章的结构和逻辑关系</li>
+<li>识别核心概念和关键术语</li>
+<li>输出：章节结构图 + 核心概念清单</li>
+</ul></div>
+    <h3>项目规模</h3>
+    <div class="info-grid">
+      <div class="info-item"><div class="info-label">读取文件数</div><div class="info-value">13</div></div>
+      <div class="info-item"><div class="info-label">写入文件数</div><div class="info-value">5</div></div>
+      <div class="info-item"><div class="info-label">API 调用数（不带插件）</div><div class="info-value">53</div></div>
+      <div class="info-item"><div class="info-label">API 调用数（带插件）</div><div class="info-value">47</div></div>
+      <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">任务类型</div><div class="info-value">深度阅读/分析型 — 多轮阅读书籍内容，生成结构化分析报告</div></div>
+    </div>
+    <h3>任务特征</h3>
+    <ul><li>分5轮进行（round-1 ~ round-5），每轮有独立的分析目标</li><li>大量文件读取（Read 51次），输出为 Markdown 格式的分析文档</li><li>单次输出生生量大（最长调用输出近万 token），是典型的长文生成任务</li><li>上下文随阅读内容不断累积，缓存读取量大</li></ul>
+    <h4>生成的文件</h4><ul><li><code>E:/WT/save-tokens/test-scenarios/without-context-mode/scenario-4-书籍分析/analysis-output/round-1-书籍结构概览.md</code></li><li><code>E:/WT/save-tokens/test-scenarios/without-context-mode/scenario-4-书籍分析/analysis-output/round-2-技术体系分析.md</code></li><li><code>E:/WT/save-tokens/test-scenarios/without-context-mode/scenario-4-书籍分析/analysis-output/round-3-工程实践分析.md</code></li><li><code>E:/WT/save-tokens/test-scenarios/without-context-mode/scenario-4-书籍分析/analysis-output/round-4-案例与应用分析.md</code></li><li><code>E:/WT/save-tokens/test-scenarios/without-context-mode/scenario-4-书籍分析/analysis-output/round-5-综合评价与建议.md</code></li></ul>
+  </div>
+
+  <div class="section">
+    <h2>二、全指标对比表</h2>
+    <table>
+      <thead><tr><th>指标</th><th>不带插件</th><th>带插件</th><th>变化</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>总时长 (Wall Clock)</td><td>15分55秒</td><td>16分00秒</td><td class="up">+0.5%</td></tr>
+<tr class="highlight"><td>API 请求次数</td><td>53</td><td>47</td><td class="down">-11.3%</td></tr>
+<tr class="highlight"><td>API 累计耗时</td><td>14分49秒</td><td>14分06秒</td><td class="down">-4.9%</td></tr>
+<tr><td>本地处理总时长</td><td>1分06秒</td><td>1分54秒</td><td class="up">+72.3%</td></tr>
+<tr><td>本地处理平均时长</td><td>1.27s</td><td>2.48s</td><td class="up">+94.7%</td></tr>
+<tr><td>本地处理中位数间隔</td><td>0.06s</td><td>0.72s</td><td class="up">+1146.6%</td></tr>
+<tr><td>本地处理最长间隔</td><td>13.74s</td><td>21.41s</td><td class="up">+55.9%</td></tr>
+<tr><td>工具调用次数</td><td>73</td><td>48</td><td class="down">-34.2%</td></tr>
+<tr><td>新增输入 tokens</td><td>367,662</td><td>639,182</td><td class="up">+73.9%</td></tr>
+<tr><td>缓存读取 tokens</td><td>4,213,760</td><td>3,881,984</td><td class="down">-7.9%</td></tr>
+<tr><td>缓存创建 tokens</td><td>0</td><td>0</td><td class="">N/A</td></tr>
+<tr><td>实际总输入 tokens</td><td>4,581,422</td><td>4,521,166</td><td class="down">-1.3%</td></tr>
+<tr><td>输出 tokens</td><td>56,836</td><td>57,982</td><td class="up">+2.0%</td></tr>
+<tr class="highlight"><td>总 Token (新增输入+输出)</td><td>424,498</td><td>697,164</td><td class="up">+64.2%</td></tr>
+<tr><td>缓存命中率</td><td>92.0%</td><td>85.9%</td><td class="down">-6.6%</td></tr>
+<tr><td>平均每次缓存读取</td><td>85,995</td><td>86,266</td><td class="up">+0.3%</td></tr>
+<tr><td>单次缓存读取峰值</td><td>155,648</td><td>163,840</td><td class="up">+5.3%</td></tr>
+<tr><td>思考耗时（累计）</td><td>1分04秒</td><td>1分22秒</td><td class="up">+27.0%</td></tr>
+<tr><td>输出耗时（累计）</td><td>12分05秒</td><td>10分54秒</td><td class="down">-9.8%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>104.3 tok/s</td><td>105.3 tok/s</td><td class="up">+1.0%</td></tr>
+<tr><td>最长 API 调用</td><td>id=39, 134.9s</td><td>id=35, 86.7s</td><td class="down">-35.7%</td></tr>
+<tr><td>最长调用输出 tokens</td><td>9,804</td><td>6,541</td><td class="down">-33.3%</td></tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-box">
+      <div class="chart-title">核心指标变化率（带插件 vs 不带插件）</div>
+      <div id="chart-core" class="chart" style="height:320px;"></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">Token 构成对比</div>
+        <div id="chart-token" class="chart"></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">时间构成对比（秒）</div>
+        <div id="chart-time" class="chart"></div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">工具调用分布对比</div>
+      <div id="chart-tools" class="chart"></div>
+    </div>
+
+  <div class="section">
+    <h2>三、工具调用分布明细</h2>
+    <table>
+      <thead><tr><th>工具</th><th>类型</th><th>不带插件</th><th>带插件</th></tr></thead>
+      <tbody>
+        <tr><td>Read</td><td>原生</td><td>51</td><td>0</td></tr>
+<tr><td>Bash</td><td>原生</td><td>12</td><td>5</td></tr>
+<tr><td>ctx_execute_file</td><td><span style="color:#F4732F;font-weight:600">插件工具</span></td><td>0</td><td>15</td></tr>
+<tr><td>ctx_execute</td><td><span style="color:#F4732F;font-weight:600">插件工具</span></td><td>0</td><td>14</td></tr>
+<tr><td>Write</td><td>原生</td><td>5</td><td>5</td></tr>
+<tr><td>ctx_search</td><td><span style="color:#F4732F;font-weight:600">插件工具</span></td><td>0</td><td>6</td></tr>
+<tr><td>Glob</td><td>原生</td><td>1</td><td>2</td></tr>
+<tr><td>TaskCreate</td><td>原生</td><td>2</td><td>0</td></tr>
+<tr><td>TaskUpdate</td><td>原生</td><td>2</td><td>0</td></tr>
+<tr><td>ctx_batch_execute</td><td><span style="color:#F4732F;font-weight:600">插件工具</span></td><td>0</td><td>1</td></tr>
+
+        <tr style="font-weight:600;background:#FFF7F0"><td>合计</td><td></td><td>73</td><td>48</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>四、关键发现</h2>
+    <ul>
+      <li><strong>速度</strong>：总时长从 15分55秒 变为 16分00秒（+0.5%），API 调用从 53 变为 47（-11.3%）</li>
+      <li><strong>成本</strong>：总 Token 从 424,498 变为 697,164（+64.2%），其中新增输入 +73.9%，缓存读取 -7.9%</li>
+      <li><strong>输出</strong>：输出 tokens 从 56,836 变为 57,982（+2.0%）</li>
+      <li><strong>工具链</strong>：工具调用从 73 次变为 48 次（-34.2%），其中插件工具 36 次（仅带插件模式可用）</li>
+      <li><strong>缓存</strong>：缓存命中率从 92.0% 变为 85.9%（-6.6%）</li>
+      <li><strong>最长调用</strong>：从 134.9s（输出 9,804 token）变为 86.7s（输出 6,541 token）</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>五、插件适用性分析</h2>
+    <h3>本场景插件效果：偏负向</h3><ul><li>速度基本持平（+0.5%），token 大幅增加64.2%（新增输入+73.9%），输出基本持平（+2.0%）</li><li>深度阅读+长文生成，核心耗时是模型生成，插件无法加速生成长文的过程</li><li>插件工具替代原生 Read 但效率更低：不带插件用 Read 51次，带插件用 ctx_execute_file 15次 + ctx_execute 14次 + ctx_search 6次（合计36次插件工具），但新增输入反而增加73.9%</li><li>缓存命中率下降6.6%（92.0%→85.9%），带插件模式下上下文结构变化导致缓存效率降低</li></ul><h4>插件适合的任务特征</h4><ul><li>✅ 大量重复性命令执行（批量处理日志、数据）</li><li>✅ 大文件/大数据集的搜索和过滤</li><li>✅ 有明确交付物的分析型任务</li><li>❌ 深度阅读+长文生成型任务：插件效果差，核心耗时是模型生成，反而增加 token 消耗</li></ul>
+  </div>
+</div>
+
+<script>
+// 核心指标变化率横向条形图
+const coreChart = echarts.init(document.getElementById('chart-core'));
+const coreMetrics = ["输入 Token", "总 Token", "最长 API 调用", "最长调用输出", "缓存命中率", "输出 Token", "总时长"];
+const coreChanges = [73.9, 64.2, -35.7, -33.3, -6.6, 2.0, 0.5];
+const coreColors = ["#e74c3c", "#e74c3c", "#27ae60", "#27ae60", "#e74c3c", "#27ae60", "#e74c3c"];
+const coreWoVals = [367662, 424498, 134.9, 9804, 92.0, 56836, 955.7];
+const coreWiVals = [639182, 697164, 86.7, 6541, 85.9, 57982, 960.2];
+const coreUnits = ["", "", "s", "", "%", "", "s"];
+coreChart.setOption({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'shadow' },
+    formatter: function(params) {
+      const idx = params[0].dataIndex;
+      const wo = coreWoVals[idx];
+      const wi = coreWiVals[idx];
+      const unit = coreUnits[idx];
+      const change = coreChanges[idx];
+      return coreMetrics[idx] + '<br/>'
+        + '不带插件: ' + wo.toLocaleString() + unit + '<br/>'
+        + '带插件: ' + wi.toLocaleString() + unit + '<br/>'
+        + '<strong>变化: ' + (change >= 0 ? '+' : '') + change + '%</strong>';
+    }
+  },
+  grid: { left: '15%', right: '10%', top: '5%', bottom: '5%' },
+  xAxis: {
+    type: 'value',
+    name: '变化率 (%)',
+    nameLocation: 'middle',
+    nameGap: 25,
+    axisLabel: { formatter: '{value}%' }
+  },
+  yAxis: {
+    type: 'category',
+    data: coreMetrics,
+    axisLabel: { fontSize: 12 }
+  },
+  series: [{
+    type: 'bar',
+    data: coreChanges.map((v, i) => ({ value: v, itemStyle: { color: coreColors[i] } })),
+    label: {
+      show: true,
+      position: 'right',
+      formatter: function(p) { return (p.value >= 0 ? '+' : '') + p.value + '%'; },
+      fontSize: 11
+    },
+    barWidth: '50%'
+  }],
+  markLine: {
+    silent: true,
+    symbol: 'none',
+    lineStyle: { color: '#999', type: 'dashed' },
+    data: [{ xAxis: 0 }]
+  }
+});
+
+const tokenChart = echarts.init(document.getElementById('chart-token'));
+tokenChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['新增输入', '缓存读取', '输出'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'category', data: ['不带插件', '带插件'] },
+  yAxis: { type: 'value', name: 'tokens' },
+  series: [
+    { name: '新增输入', type: 'bar', stack: 'total', data: [367662, 639182], itemStyle: { color: '#F4732F' } },
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [4213760, 3881984], itemStyle: { color: '#FFA94D' } },
+    { name: '输出', type: 'bar', stack: 'total', data: [56836, 57982], itemStyle: { color: '#fbbf24' } }
+  ]
+});
+
+const toolNames = ["Read", "Bash", "ctx_execute_file", "ctx_execute", "Write", "ctx_search", "Glob", "TaskCreate", "TaskUpdate", "ctx_batch_execute"];
+const woTools = {"Read": 51, "Bash": 12, "ctx_execute_file": 0, "ctx_execute": 0, "Write": 5, "ctx_search": 0, "Glob": 1, "TaskCreate": 2, "TaskUpdate": 2, "ctx_batch_execute": 0};
+const wiTools = {"Read": 0, "Bash": 5, "ctx_execute_file": 15, "ctx_execute": 14, "Write": 5, "ctx_search": 6, "Glob": 2, "TaskCreate": 0, "TaskUpdate": 0, "ctx_batch_execute": 1};
+const toolsChart = echarts.init(document.getElementById('chart-tools'));
+toolsChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['不带插件', '带插件'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'value', name: '次数' },
+  yAxis: { type: 'category', data: toolNames, axisLabel: { fontSize: 11 } },
+  series: [
+    { name: '不带插件', type: 'bar', data: toolNames.map(t => woTools[t] || 0), itemStyle: { color: '#cbd5e1' } },
+    { name: '带插件', type: 'bar', data: toolNames.map(t => wiTools[t] || 0), itemStyle: { color: '#F4732F' } }
+  ]
+});
+
+const timeChart = echarts.init(document.getElementById('chart-time'));
+timeChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+  legend: { data: ['思考', '输出', '本地处理'], top: 0 },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'category', data: ['不带插件', '带插件'] },
+  yAxis: { type: 'value', name: '秒' },
+  series: [
+    { name: '思考', type: 'bar', stack: 'total', data: [65.0, 82.5], itemStyle: { color: '#fbbf24' } },
+    { name: '输出', type: 'bar', stack: 'total', data: [725.7, 654.5], itemStyle: { color: '#F4732F' } },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [66.2, 114.1], itemStyle: { color: '#e2e8f0' } }
+  ]
+});
+
+window.addEventListener('resize', function() {
+  ['chart-core','chart-token','chart-tools','chart-time'].forEach(id => {
+    const c = echarts.getInstanceByDom(document.getElementById(id));
+    if (c) c.resize();
+  });
+});
+</script>
+</body>
+</html>

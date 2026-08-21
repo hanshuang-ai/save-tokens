@@ -1,0 +1,34 @@
+重构完成。以下是最终结果：
+
+## 重构总结
+
+### 拆分结果
+
+| 文件 | 行数 | 职责 |
+|------|------|------|
+| `detail.vue` | 867 | 主组件——页面入口，编排子组件和 composables |
+| **子组件 (5个)** | | |
+| `components/StationCard.vue` | 77 | 油站卡片展示 |
+| `components/RefuelInfoStep.vue` | 89 | 加油信息步骤（步骤1） |
+| `components/AmountInfoStep.vue` | 147 | 金额信息步骤（步骤2） |
+| `components/OilGunSelector.vue` | 82 | 油号油枪选择弹窗 |
+| `components/PartnerSelector.vue` | 99 | 服务商选择弹窗 |
+| **Composables (5个)** | | |
+| `composables/useStationData.js` | 125 | 油站详情获取、收藏 |
+| `composables/usePartnerSelection.js` | 187 | 服务商列表、最优价选择 |
+| `composables/usePriceCalculation.js` | 81 | 价格计算、优惠 |
+| `composables/usePayment.js` | 179 | 支付方式、订单构建 |
+| `composables/useKeyboardInput.js` | 101 | 键盘输入逻辑 |
+
+### 关键指标对比
+
+- **主组件**: 2159行 → 867行（减少 60%）
+- **最大单文件**: 2159行 → 867行（每个文件职责单一）
+- **组件数**: 1 → 6（1个主组件 + 5个子组件）
+- **可测试性**: composables 独立于组件，可单独单测
+
+### 架构设计
+
+- **数据流**: 主组件持有所有状态（composable state 通过 `Object.defineProperty` 与组件 data 双向同步），通过 props 向下传递，子组件通过 `$emit` 向上通知
+- **兼容性**: 纯 Vue 2 Options API，无需 `@vue/composition-api` 插件
+- **原始项目不变**: 所有重构代码位于 `E:\WT\save-tokens\refactored-detail\`

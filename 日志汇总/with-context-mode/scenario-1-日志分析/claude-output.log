@@ -1,0 +1,25 @@
+---
+
+诊断分析完成。以下是核心发现的概要：
+
+### 输出文件
+
+| 文件 | 说明 |
+|------|------|
+| `diagnostic_report.md` | 完整诊断报告 (8 个章节) |
+| `electronicdirections_analysis.txt` | 玩车手册应用日志专项分析 |
+| `../without-context-mode/.../electronicdirections_logs.txt` | 原始应用日志提取 (2205 行) |
+
+### Top 3 关键问题
+
+1. **wtbridge.service 死亡循环 (P0)** — 在 ~9 分钟内从 counter=35 重启到 159，每次间隔约 21 秒。根因是外网网关 `172.16.16.3` 和互联网 `www.baidu.com` 持续 ping 不通，服务检测到网络不通后退出，systemd 立即安排重启，形成死循环。
+
+2. **车载网络完全中断 (P0)** — 内部 VLAN (`172.16.6.x`) 正常，但网关和外网不通，DDS 多播 (`239.255.0.1:8900`) 持续写入失败，导致 HUD 和仪表服务之间的实时通信中断。
+
+3. **7 次异常重启 (P1)** — 6.5 小时内系统重启 7 次，reboot-reason 显示为干净重启（非内核 panic），大量服务 IPC 连接失败（Unix socket 文件未就绪）。
+
+### com.wtcl.electronicdirections 应用
+
+- 应用在 `20:41:53` 被系统因内存压力杀死 (reason=18)，内存占用 202MB
+- 在 `20:54:19` 被用户重新启动，启动过程正常但有 `PackageManager$NameNotFoundException` 异常
+- 建议优化内存至 150MB 以下
