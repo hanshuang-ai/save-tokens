@@ -1036,7 +1036,7 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 
   <div class="section">
     <h2>五、插件适用性分析</h2>
-    <h3>本场景插件效果：偏负向</h3><ul><li>速度基本持平（+0.5%），token 大幅增加64.2%（新增输入+73.9%），输出基本持平（+2.0%）</li><li>深度阅读+长文生成，核心耗时是模型生成，插件无法加速生成长文的过程</li><li>插件工具替代原生 Read 但效率更低：不带插件用 Read 51次，带插件用 ctx_execute_file 15次 + ctx_execute 14次 + ctx_search 6次（合计36次插件工具），但新增输入反而增加73.9%</li><li>缓存命中率下降6.6%（92.0%→85.9%），带插件模式下上下文结构变化导致缓存效率降低</li></ul><h4>插件适合的任务特征</h4><ul><li>✅ 大量重复性命令执行（批量处理日志、数据）</li><li>✅ 大文件/大数据集的搜索和过滤</li><li>✅ 有明确交付物的分析型任务</li><li>❌ 深度阅读+长文生成型任务：插件效果差，核心耗时是模型生成，反而增加 token 消耗</li></ul>
+    <h3>本场景插件效果：偏负向</h3><ul><li>速度没变（+0.5%），token 反而多了 64.2%</li><li><strong>原因一</strong>：书籍分析的主要耗时在「模型写长文」，插件帮不上忙——它省的是读文件、跑命令，不省写文章</li><li><strong>原因二</strong>：插件把「Read 直接读文件」换成了「ctx_execute 写脚本去分析文件」，模型每次要先生成脚本、再处理脚本输出，比直接读更费 token；次数虽从 51 次降到 36 次，但每次更重，新增输入反而 +73.9%</li><li><strong>原因三</strong>：缓存命中率从 92.0% 掉到 85.9%，上下文结构变了，缓存更难命中</li></ul><h4>插件适合的任务特征</h4><ul><li>✅ 大量重复性命令执行（批量处理日志、数据）</li><li>✅ 大文件/大数据集的搜索和过滤</li><li>✅ 有明确交付物的分析型任务</li><li>❌ 深度阅读+长文生成型任务：插件效果差，核心耗时是模型生成，反而增加 token 消耗</li></ul>
   </div>
 </div>
 
@@ -1323,7 +1323,7 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 
   <div class="chart-row">
     <div class="chart-box">
-      <div class="chart-title">五场景输出量对比（输出 tokens）</div>
+      <div class="chart-title">五场景总 Token 对比（输入 + 输出，堆叠）</div>
       <div id="chart-output-summary" class="chart"></div>
     </div>
     <div class="chart-box">
@@ -1405,7 +1405,7 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
       <li><strong>S1 日志分析、S5 项目逆向</strong>：插件效果显著正向，速度提升 67%~74%，Token 降低 56%~65%。共同特征是有大量可批量处理的任务，插件用 ctx_batch_execute 替代了多次 API 调用或多Agent协作。</li>
       <li><strong>S2 代码优化</strong>：轻微正向，速度提升 6%，但 Token 增加 16%。代码重构核心耗时是模型生成，插件替代空间有限。</li>
       <li><strong>S3 2048游戏</strong>：中性偏负，速度提升 12% 但 Token 增加 20%，输出减少 10%。从零生成型任务无批量操作空间，插件能力未充分发挥。</li>
-      <li><strong>S4 书籍分析</strong>：偏负向，速度基本持平（+0.4%），Token 大幅增加 64%。深度阅读+长文生成场景，插件用 36 次插件工具替代原生 Read 但成本更高，缓存命中率下降 6.6%。</li>
+      <li><strong>S4 书籍分析</strong>：偏负向，速度基本持平（+0.4%），Token 大幅增加 64%。主要耗时在写长文（插件帮不上忙），且把「Read 直接读」换成了「ctx 写脚本分析」，次数少了但每次更重，缓存命中率也降到 85.9%。</li>
       <li><strong>规律</strong>：插件最适合"有大量现有数据/任务需要批量处理"的场景；对"深度阅读+长文生成"和"从零生成"场景效果差，因为核心耗时是模型生成，插件无法加速。</li>
       <li><strong>注意</strong>：显著正向的两个场景（S1、S5）输出量都大幅减少（-70%、-65%），需验证任务完成度是否达标。</li>
     </ul>
@@ -1514,25 +1514,12 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
   </div>
 
   <div class="insight" style="margin-top: 16px;">
-    <h3 style="font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px;">任务完成度验证（关键补充）</h3>
-    <p>插件显著正向的两个场景（S1、S5）输出量都大幅减少，光看 token 无法判断任务是否真正达标。此处抽查 S1 的实际产出文件：</p>
-    <table style="margin: 10px 0; font-size: 13px;">
-      <thead><tr><th>任务要求</th><th>不带插件</th><th>带插件</th><th>对比</th></tr></thead>
-      <tbody>
-        <tr><td>第4步：生成诊断报告</td><td>在 response 流内（19,003 字符，未落盘成文件）</td><td>diagnostic_report.md（14.4 KB，8 章节，落盘）</td><td>带插件更规范（落盘）</td></tr>
-        <tr><td>第5步：提取 electronicdirections 日志</td><td>electronicdirections_logs.txt（542 KB，原始日志提取）</td><td>electronicdirections_analysis.txt（2.7 KB，仅分析摘要）</td><td><strong>不带插件更彻底（提取了原始日志）</strong></td></tr>
-      </tbody>
-    </table>
-    <p><strong>发现</strong>：S1 带插件虽省了 64.6% 的输入 token，但第 5 步「把日志单独提取到一个文件」退化为 2.7 KB 的分析摘要，未按要求提取 542 KB 原始日志。说明省 token 的同时，任务完成度可能打折，需要人工核验产出。建议评测时对每个场景的交付物做逐项验收。</p>
-  </div>
-
-  <div class="insight" style="margin-top: 16px;">
     <h3 style="font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px;">使用建议（决策结论）</h3>
     <ul>
       <li><strong>强烈推荐用插件</strong>：日志分析、项目逆向、大批量命令执行、多 Agent 协作类任务（实测省 53%~65% token、67%~74% 时间）。</li>
       <li><strong>不推荐用插件</strong>：从零编码生成（2048 类）、深度长文阅读（书籍分析类）——核心耗时是模型生成，插件工具反而增加 token（+20%~+74%）。</li>
       <li><strong>通用规则</strong>：任务有大量可批量/可搜索的现有数据 → 用插件；任务以「从零生成长内容」为主 → 不用插件。</li>
-      <li><strong>验收提醒</strong>：无论哪种模式，省了 token 都要核验交付物是否完整达标（见上方完成度验证）。</li>
+      <li><strong>验收提醒</strong>：无论哪种模式，省了 token 都要核验交付物是否完整达标。</li>
     </ul>
   </div>
 
@@ -1602,8 +1589,8 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '新增输入', type: 'bar', stack: 'total', data: [461129, 163211], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '缓存读取', type: 'bar', stack: 'total', data: [5921152, 2035712], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [57339, 16852], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} }
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [5921152, 2035712], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [57339, 16852], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1631,9 +1618,9 @@ timeChart.setOption({
   xAxis: { type: 'category', data: ['不带插件', '带插件'] },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '思考', type: 'bar', stack: 'total', data: [228.0, 55.2], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [579.8, 178.8], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '本地处理', type: 'bar', stack: 'total', data: [257.6, 53.9], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} }
+    { name: '思考', type: 'bar', stack: 'total', data: [228.0, 55.2], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [579.8, 178.8], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [257.6, 53.9], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1706,8 +1693,8 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '新增输入', type: 'bar', stack: 'total', data: [110243, 134397], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '缓存读取', type: 'bar', stack: 'total', data: [2784256, 1951744], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [38443, 37826], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} }
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [2784256, 1951744], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [38443, 37826], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1735,9 +1722,9 @@ timeChart.setOption({
   xAxis: { type: 'category', data: ['不带插件', '带插件'] },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '思考', type: 'bar', stack: 'total', data: [86.7, 97.8], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [398.7, 377.8], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '本地处理', type: 'bar', stack: 'total', data: [33.6, 54.3], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} }
+    { name: '思考', type: 'bar', stack: 'total', data: [86.7, 97.8], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [398.7, 377.8], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [33.6, 54.3], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1810,8 +1797,8 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '新增输入', type: 'bar', stack: 'total', data: [71833, 96205], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '缓存读取', type: 'bar', stack: 'total', data: [823296, 1196032], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [32909, 29597], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} }
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [823296, 1196032], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [32909, 29597], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1839,9 +1826,9 @@ timeChart.setOption({
   xAxis: { type: 'category', data: ['不带插件', '带插件'] },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '思考', type: 'bar', stack: 'total', data: [72.1, 75.2], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [365.8, 298.2], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '本地处理', type: 'bar', stack: 'total', data: [18.0, 15.1], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} }
+    { name: '思考', type: 'bar', stack: 'total', data: [72.1, 75.2], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [365.8, 298.2], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [18.0, 15.1], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1914,8 +1901,8 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '新增输入', type: 'bar', stack: 'total', data: [367662, 639182], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '缓存读取', type: 'bar', stack: 'total', data: [4213760, 3881984], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [56836, 57982], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} }
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [4213760, 3881984], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [56836, 57982], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -1943,9 +1930,9 @@ timeChart.setOption({
   xAxis: { type: 'category', data: ['不带插件', '带插件'] },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '思考', type: 'bar', stack: 'total', data: [65.0, 82.5], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [725.7, 654.5], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '本地处理', type: 'bar', stack: 'total', data: [66.2, 114.1], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} }
+    { name: '思考', type: 'bar', stack: 'total', data: [65.0, 82.5], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [725.7, 654.5], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [66.2, 114.1], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -2018,8 +2005,8 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '新增输入', type: 'bar', stack: 'total', data: [278834, 128567], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '缓存读取', type: 'bar', stack: 'total', data: [2117632, 1097728], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [76172, 26775], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} }
+    { name: '缓存读取', type: 'bar', stack: 'total', data: [2117632, 1097728], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [76172, 26775], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -2047,9 +2034,9 @@ timeChart.setOption({
   xAxis: { type: 'category', data: ['不带插件', '带插件'] },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '思考', type: 'bar', stack: 'total', data: [44.1, 16.2], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '输出', type: 'bar', stack: 'total', data: [1014.3, 301.2], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '本地处理', type: 'bar', stack: 'total', data: [33.3, 38.7], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} }
+    { name: '思考', type: 'bar', stack: 'total', data: [44.1, 16.2], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '输出', type: 'bar', stack: 'total', data: [1014.3, 301.2], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '本地处理', type: 'bar', stack: 'total', data: [33.3, 38.7], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
@@ -2103,17 +2090,32 @@ tokenChart.setOption({
   yAxis: { type: 'value', name: 'tokens' },
   series: [
     { name: '不带插件-新增输入', type: 'bar', stack: 'wo', data: [461129, 110243, 71833, 367662, 278834], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '不带插件-缓存读取', type: 'bar', stack: 'wo', data: [5921152, 2784256, 823296, 4213760, 2117632], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '不带插件-缓存创建', type: 'bar', stack: 'wo', data: [0, 0, 0, 0, 0], itemStyle: { color: '#FFD8A8' , borderRadius: [4,4,0,0]} },
-    { name: '不带插件-输出', type: 'bar', stack: 'wo', data: [57339, 38443, 32909, 56836, 76172], itemStyle: { color: '#4ECDC4' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-缓存读取', type: 'bar', stack: 'wo', data: [5921152, 2784256, 823296, 4213760, 2117632], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-缓存创建', type: 'bar', stack: 'wo', data: [0, 0, 0, 0, 0], itemStyle: { color: '#8b5cf6' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-输出', type: 'bar', stack: 'wo', data: [57339, 38443, 32909, 56836, 76172], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} },
     { name: '带插件-新增输入', type: 'bar', stack: 'wi', data: [163211, 134397, 96205, 639182, 128567], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '带插件-缓存读取', type: 'bar', stack: 'wi', data: [2035712, 1951744, 1196032, 3881984, 1097728], itemStyle: { color: '#FFA94D' , borderRadius: [4,4,0,0]} },
-    { name: '带插件-缓存创建', type: 'bar', stack: 'wi', data: [0, 0, 0, 0, 0], itemStyle: { color: '#FFD8A8' , borderRadius: [4,4,0,0]} },
-    { name: '带插件-输出', type: 'bar', stack: 'wi', data: [16852, 37826, 29597, 57982, 26775], itemStyle: { color: '#4ECDC4' , borderRadius: [4,4,0,0]} }
+    { name: '带插件-缓存读取', type: 'bar', stack: 'wi', data: [2035712, 1951744, 1196032, 3881984, 1097728], itemStyle: { color: '#3b82f6' , borderRadius: [4,4,0,0]} },
+    { name: '带插件-缓存创建', type: 'bar', stack: 'wi', data: [0, 0, 0, 0, 0], itemStyle: { color: '#8b5cf6' , borderRadius: [4,4,0,0]} },
+    { name: '带插件-输出', type: 'bar', stack: 'wi', data: [16852, 37826, 29597, 57982, 26775], itemStyle: { color: '#10b981' , borderRadius: [4,4,0,0]} }
   ]
 });
 
-makeBarChart('chart-output-summary', 'wo_output', 'wi_output', '输出量', 'tokens');
+// 总 Token 堆叠柱状图（输入 + 输出）
+const outputChart = echarts.init(document.getElementById('chart-output-summary'));
+outputChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function(val) { return val.toLocaleString() + ' tokens'; } },
+  legend: { data: ['不带插件-输入', '不带插件-输出', '带插件-输入', '带插件-输出'], top: 0, textStyle: { fontSize: 11 } },
+  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  xAxis: { type: 'category', data: names, axisLabel: { fontSize: 11, color: '#64748b' } },
+  yAxis: { type: 'value', name: 'tokens' },
+  series: [
+    { name: '不带插件-输入', type: 'bar', stack: 'wo', data: [461129, 110243, 71833, 367662, 278834], itemStyle: { color: '#F4732F', borderRadius: [4,4,0,0] } },
+    { name: '不带插件-输出', type: 'bar', stack: 'wo', data: [57339, 38443, 32909, 56836, 76172], itemStyle: { color: '#10b981', borderRadius: [4,4,0,0] } },
+    { name: '带插件-输入', type: 'bar', stack: 'wi', data: [163211, 134397, 96205, 639182, 128567], itemStyle: { color: '#F4732F', borderRadius: [4,4,0,0] } },
+    { name: '带插件-输出', type: 'bar', stack: 'wi', data: [16852, 37826, 29597, 57982, 26775], itemStyle: { color: '#10b981', borderRadius: [4,4,0,0] } }
+  ]
+});
+
 makeBarChart('chart-api-summary', 'wo_api', 'wi_api', 'API次数', '次');
 
 // 工具调用分布堆叠图
@@ -2141,12 +2143,12 @@ timeChart.setOption({
   xAxis: { type: 'category', data: names, axisLabel: { fontSize: 11, color: '#64748b' } },
   yAxis: { type: 'value', name: '秒' },
   series: [
-    { name: '不带插件-思考', type: 'bar', stack: 'wo', data: [228.0, 86.7, 72.1, 65.0, 44.1], itemStyle: { color: '#fbbf24' , borderRadius: [4,4,0,0]} },
-    { name: '不带插件-输出', type: 'bar', stack: 'wo', data: [579.8, 398.7, 365.8, 725.7, 1014.3], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '不带插件-本地', type: 'bar', stack: 'wo', data: [257.6, 33.6, 18.0, 66.2, 33.3], itemStyle: { color: '#e2e8f0' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-思考', type: 'bar', stack: 'wo', data: [228.0, 86.7, 72.1, 65.0, 44.1], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-输出', type: 'bar', stack: 'wo', data: [579.8, 398.7, 365.8, 725.7, 1014.3], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '不带插件-本地', type: 'bar', stack: 'wo', data: [257.6, 33.6, 18.0, 66.2, 33.3], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} },
     { name: '带插件-思考', type: 'bar', stack: 'wi', data: [55.2, 97.8, 75.2, 82.5, 16.2], itemStyle: { color: '#f59e0b' , borderRadius: [4,4,0,0]} },
-    { name: '带插件-输出', type: 'bar', stack: 'wi', data: [178.8, 377.8, 298.2, 654.5, 301.2], itemStyle: { color: '#F4732F' , borderRadius: [4,4,0,0]} },
-    { name: '带插件-本地', type: 'bar', stack: 'wi', data: [53.9, 54.3, 15.1, 114.1, 38.7], itemStyle: { color: '#64748b' , borderRadius: [4,4,0,0]} }
+    { name: '带插件-输出', type: 'bar', stack: 'wi', data: [178.8, 377.8, 298.2, 654.5, 301.2], itemStyle: { color: '#ef4444' , borderRadius: [4,4,0,0]} },
+    { name: '带插件-本地', type: 'bar', stack: 'wi', data: [53.9, 54.3, 15.1, 114.1, 38.7], itemStyle: { color: '#94a3b8' , borderRadius: [4,4,0,0]} }
   ]
 });
 
