@@ -526,8 +526,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 <tr><td>单次缓存读取峰值</td><td>95,360</td><td>140,288</td><td class="up">+47.1%</td></tr>
 <tr><td>思考耗时（累计）</td><td>3分48秒</td><td>0分55秒</td><td class="down">-75.8%</td></tr>
 <tr><td>输出耗时（累计）</td><td>9分39秒</td><td>2分58秒</td><td class="down">-69.2%</td></tr>
-<tr><td>流式输出速度（不含思考）</td><td>435.3 tok/s</td><td>130.1 tok/s</td><td class="down">-70.1%</td></tr>
-<tr><td>最长 API 调用</td><td>id=35, 47.9s</td><td>id=23, 59.9s</td><td class="up">+25.1%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>98.9 tok/s</td><td>94.3 tok/s</td><td class="down">-4.7%</td></tr>
+<tr><td>最长 API 调用（duration_ms 最大值：从发请求到收到完整响应的耗时；构成 = 思考 + 生成 + 网络传输）</td><td>id=35, 47.9s</td><td>id=23, 59.9s</td><td class="up">+25.1%</td></tr>
 <tr><td>最长调用输出 tokens</td><td>3,208</td><td>4,258</td><td class="up">+32.7%</td></tr>
 
       </tbody>
@@ -679,8 +679,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 <tr><td>单次缓存读取峰值</td><td>90,112</td><td>110,592</td><td class="up">+22.7%</td></tr>
 <tr><td>思考耗时（累计）</td><td>1分26秒</td><td>1分37秒</td><td class="up">+12.8%</td></tr>
 <tr><td>输出耗时（累计）</td><td>6分38秒</td><td>6分17秒</td><td class="down">-5.2%</td></tr>
-<tr><td>流式输出速度（不含思考）</td><td>1519.7 tok/s</td><td>236.4 tok/s</td><td class="down">-84.4%</td></tr>
-<tr><td>最长 API 调用</td><td>id=30, 75.8s</td><td>id=25, 94.6s</td><td class="up">+24.8%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>96.4 tok/s</td><td>100.1 tok/s</td><td class="up">+3.8%</td></tr>
+<tr><td>最长 API 调用（duration_ms 最大值：从发请求到收到完整响应的耗时；构成 = 思考 + 生成 + 网络传输）</td><td>id=30, 75.8s</td><td>id=25, 94.6s</td><td class="up">+24.8%</td></tr>
 <tr><td>最长调用输出 tokens</td><td>6,135</td><td>7,954</td><td class="up">+29.6%</td></tr>
 
       </tbody>
@@ -751,7 +751,7 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
   <h1>2048游戏：带插件 vs 不带插件 对比分析</h1>
   <p class="subtitle">数据来源：日志自动分析 | 生成时间：2026-08-21</p>
   <div class="header-effect">
-    插件效果评级：<span class="effect-badge badge-mid">中性</span>
+    插件效果评级：<span class="effect-badge badge-mid">中性偏负</span>
   </div>
 
   <div class="metric-cards">
@@ -821,8 +821,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 <tr><td>单次缓存读取峰值</td><td>64,512</td><td>75,776</td><td class="up">+17.5%</td></tr>
 <tr><td>思考耗时（累计）</td><td>1分12秒</td><td>1分15秒</td><td class="up">+4.3%</td></tr>
 <tr><td>输出耗时（累计）</td><td>6分05秒</td><td>4分58秒</td><td class="down">-18.5%</td></tr>
-<tr><td>流式输出速度（不含思考）</td><td>150.6 tok/s</td><td>139.6 tok/s</td><td class="down">-7.3%</td></tr>
-<tr><td>最长 API 调用</td><td>id=9, 167.9s</td><td>id=11, 88.0s</td><td class="down">-47.6%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>90.0 tok/s</td><td>99.2 tok/s</td><td class="up">+10.2%</td></tr>
+<tr><td>最长 API 调用（duration_ms 最大值：从发请求到收到完整响应的耗时；构成 = 思考 + 生成 + 网络传输）</td><td>id=9, 167.9s</td><td>id=11, 88.0s</td><td class="down">-47.6%</td></tr>
 <tr><td>最长调用输出 tokens</td><td>13,429</td><td>7,126</td><td class="down">-46.9%</td></tr>
 
       </tbody>
@@ -972,8 +972,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 <tr><td>单次缓存读取峰值</td><td>155,648</td><td>163,840</td><td class="up">+5.3%</td></tr>
 <tr><td>思考耗时（累计）</td><td>1分04秒</td><td>1分22秒</td><td class="up">+27.0%</td></tr>
 <tr><td>输出耗时（累计）</td><td>12分05秒</td><td>10分54秒</td><td class="down">-9.8%</td></tr>
-<tr><td>流式输出速度（不含思考）</td><td>104.3 tok/s</td><td>105.3 tok/s</td><td class="up">+1.0%</td></tr>
-<tr><td>最长 API 调用</td><td>id=39, 134.9s</td><td>id=35, 86.7s</td><td class="down">-35.7%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>78.3 tok/s</td><td>88.6 tok/s</td><td class="up">+13.2%</td></tr>
+<tr><td>最长 API 调用（duration_ms 最大值：从发请求到收到完整响应的耗时；构成 = 思考 + 生成 + 网络传输）</td><td>id=39, 134.9s</td><td>id=35, 86.7s</td><td class="down">-35.7%</td></tr>
 <tr><td>最长调用输出 tokens</td><td>9,804</td><td>6,541</td><td class="down">-33.3%</td></tr>
 
       </tbody>
@@ -1205,8 +1205,8 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
 <tr><td>单次缓存读取峰值</td><td>94,208</td><td>110,592</td><td class="up">+17.4%</td></tr>
 <tr><td>思考耗时（累计）</td><td>0分44秒</td><td>0分16秒</td><td class="down">-63.1%</td></tr>
 <tr><td>输出耗时（累计）</td><td>16分54秒</td><td>5分01秒</td><td class="down">-70.3%</td></tr>
-<tr><td>流式输出速度（不含思考）</td><td>89.3 tok/s</td><td>134.2 tok/s</td><td class="up">+50.2%</td></tr>
-<tr><td>最长 API 调用</td><td>id=53, 135.1s</td><td>id=13, 124.7s</td><td class="down">-7.7%</td></tr>
+<tr><td>流式输出速度（不含思考）</td><td>75.1 tok/s</td><td>88.9 tok/s</td><td class="up">+18.4%</td></tr>
+<tr><td>最长 API 调用（duration_ms 最大值：从发请求到收到完整响应的耗时；构成 = 思考 + 生成 + 网络传输）</td><td>id=53, 135.1s</td><td>id=13, 124.7s</td><td class="down">-7.7%</td></tr>
 <tr><td>最长调用输出 tokens</td><td>10,798</td><td>10,628</td><td class="down">-1.6%</td></tr>
 
       </tbody>
@@ -1375,7 +1375,7 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
           <td>-10.1%</td>
           <td>+15.8%</td>
           <td>+16.7%</td>
-          <td><span class="tag tag-mid">中性</span></td>
+          <td><span class="tag tag-mid">中性偏负</span></td>
         </tr>
         <tr>
           <td>S4 书籍分析</td>
@@ -1501,6 +1501,38 @@ tr.highlight td { background: linear-gradient(90deg, var(--primary-50), transpar
       <li>当任务有<strong>大量可批量处理的重复性操作</strong>时（日志分析、项目逆向），API 减少收益远大于插件开销，效果显著正向。</li>
       <li>当任务是<strong>深度阅读+长文生成</strong>或<strong>从零生成</strong>时，可批量处理的操作少，插件工具开销占比高，甚至增加 API 次数，效果偏负。</li>
       <li><strong>Token 变化主要跟随 API 次数</strong>，但插件工具的冗长格式和缓存命中率下降会在 API 减少不多时导致 token 反而增加。</li>
+    </ul>
+  </div>
+
+  <div class="insight" style="margin-top: 16px;">
+    <h3 style="font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px;">关于「最长 API 调用」的三条规律</h3>
+    <ul>
+      <li><strong>规律一：最长调用本质是「一次生成大量 token」</strong>——输出生成阶段（output_ms）占 62%~98%，输出 token 从 3,208 到 13,429 不等。慢不在网络（首字节仅 1.5~2.4 秒），而在模型长文/长代码生成。</li>
+      <li><strong>规律二：思考只在「复杂推理」任务触发</strong>——不带插件时，日志分析（16.3 秒思考）和 2048 游戏设计（37 秒思考）触发深度思考；而代码重构、书籍分析、文档生成几乎零思考（&lt;1 秒）。说明 deepseek-v4-pro 的 thinking 是按需触发的。</li>
+      <li><strong>规律三：带插件后思考普遍下降</strong>——S1 思考占比 34%→1%，S3 22%→6%。因为插件提供了 ctx 批量执行/搜索工具，模型把「探索推理」转交给工具，自身不再深度思考（工具替代思考）。注：带插件的轮次其实更少（批量执行减少了 API 往返，如 S1 119→26、S5 56→15），并非「拆碎更多轮次」。</li>
+    </ul>
+  </div>
+
+  <div class="insight" style="margin-top: 16px;">
+    <h3 style="font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px;">任务完成度验证（关键补充）</h3>
+    <p>插件显著正向的两个场景（S1、S5）输出量都大幅减少，光看 token 无法判断任务是否真正达标。此处抽查 S1 的实际产出文件：</p>
+    <table style="margin: 10px 0; font-size: 13px;">
+      <thead><tr><th>任务要求</th><th>不带插件</th><th>带插件</th><th>对比</th></tr></thead>
+      <tbody>
+        <tr><td>第4步：生成诊断报告</td><td>在 response 流内（19,003 字符，未落盘成文件）</td><td>diagnostic_report.md（14.4 KB，8 章节，落盘）</td><td>带插件更规范（落盘）</td></tr>
+        <tr><td>第5步：提取 electronicdirections 日志</td><td>electronicdirections_logs.txt（542 KB，原始日志提取）</td><td>electronicdirections_analysis.txt（2.7 KB，仅分析摘要）</td><td><strong>不带插件更彻底（提取了原始日志）</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>发现</strong>：S1 带插件虽省了 64.6% 的输入 token，但第 5 步「把日志单独提取到一个文件」退化为 2.7 KB 的分析摘要，未按要求提取 542 KB 原始日志。说明省 token 的同时，任务完成度可能打折，需要人工核验产出。建议评测时对每个场景的交付物做逐项验收。</p>
+  </div>
+
+  <div class="insight" style="margin-top: 16px;">
+    <h3 style="font-size: 18px; margin-bottom: 16px; color: #1a1a2e; border-left: 4px solid #F4732F; padding-left: 12px;">使用建议（决策结论）</h3>
+    <ul>
+      <li><strong>强烈推荐用插件</strong>：日志分析、项目逆向、大批量命令执行、多 Agent 协作类任务（实测省 53%~65% token、67%~74% 时间）。</li>
+      <li><strong>不推荐用插件</strong>：从零编码生成（2048 类）、深度长文阅读（书籍分析类）——核心耗时是模型生成，插件工具反而增加 token（+20%~+74%）。</li>
+      <li><strong>通用规则</strong>：任务有大量可批量/可搜索的现有数据 → 用插件；任务以「从零生成长内容」为主 → 不用插件。</li>
+      <li><strong>验收提醒</strong>：无论哪种模式，省了 token 都要核验交付物是否完整达标（见上方完成度验证）。</li>
     </ul>
   </div>
 
